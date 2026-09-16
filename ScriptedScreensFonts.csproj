@@ -5,7 +5,12 @@
         <RootNamespace>$(ModName)</RootNamespace>
         <TargetFramework>netstandard2.1</TargetFramework>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-        <Version>0.1.0.0</Version>
+        <Version>0.2.0.0</Version>
+        <!-- symbols name no folder of the machine that built the mod -->
+        <PathMap>$(MSBuildProjectDirectory)=/src/ScriptedScreensFonts,$(NuGetPackageRoot)=/nuget/</PathMap>
+        <!-- no Source Link: it maps the build folder to the repository in the embedded symbols -->
+        <EnableSourceLink>false</EnableSourceLink>
+        <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     </PropertyGroup>
     <Import Project="$(MSBuildThisFileDirectory)Stationeers.VS.props" />
@@ -35,18 +40,15 @@
         <CopyItemsAbout Include="$(ProjectDir)\About\**\*.*" />
         <CopyItemsGameData Include="$(ProjectDir)\GameData\**\*.*" />
         <CopyItemsAssets Include="$(ProjectDir)\Assets\**\*.*" />
+        <CopyItemsExamples Include="$(ProjectDir)\examples\**\*.lua" />
+        <CopyItemsDocs Include="$(ProjectDir)\README.md;$(ProjectDir)\QUICKSTART.md;$(ProjectDir)\CHANGELOG.md" />
     </ItemGroup>
     <Target Name="CopyAssetsToMods" AfterTargets="PostBuild">
         <Copy SourceFiles="@(CopyItemsAbout)" DestinationFolder="$(StationeersDocumentsDirectory)\mods\$(ModName)\About\%(RecursiveDir)" ContinueOnError="true" />
         <Copy SourceFiles="@(CopyItemsGameData)" DestinationFolder="$(StationeersDocumentsDirectory)\mods\$(ModName)\GameData\%(RecursiveDir)" ContinueOnError="true" />
         <Copy SourceFiles="@(CopyItemsAssets)" DestinationFolder="$(StationeersDocumentsDirectory)\mods\$(ModName)\Assets\%(RecursiveDir)" ContinueOnError="true" />
-    </Target>
-    <Target Name="CopyRuntimeDependenciesToMods" AfterTargets="PostBuild">
-        <ItemGroup>
-            <_RuntimeDependencyDlls Include="@(ReferenceCopyLocalPaths)" Exclude="$(TargetPath)" />
-            <_RuntimeDependencyDlls Remove="@(_RuntimeDependencyDlls)" Condition="'$(Configuration)' == 'Release' and '%(Extension)' == '.pdb'" />
-        </ItemGroup>
-        <Copy SourceFiles="@(_RuntimeDependencyDlls)" DestinationFolder="$(StationeersDocumentsDirectory)\mods\$(ModName)" ContinueOnError="true" Retries="0" RetryDelayMilliseconds="0" />
+        <Copy SourceFiles="@(CopyItemsExamples)" DestinationFolder="$(StationeersDocumentsDirectory)\mods\$(ModName)\examples\%(RecursiveDir)" ContinueOnError="true" />
+        <Copy SourceFiles="@(CopyItemsDocs)" DestinationFolder="$(StationeersDocumentsDirectory)\mods\$(ModName)" ContinueOnError="true" />
     </Target>
     <Target Name="GenerateVersionConst" BeforeTargets="CoreCompile">
         <PropertyGroup>

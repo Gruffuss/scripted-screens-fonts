@@ -388,6 +388,8 @@ internal static class FontLoader
 
         ScriptedScreensFontsPlugin.Log?.LogInfo(
             $"Font available: <font=\"{fontName}\"> ({characterTable.Count} characters from {file})");
+        FontRegistry.Record(fontName, $"font file {file}, {characterTable.Count} characters"
+            + (complete ? string.Empty : ", atlas full so some characters are missing"));
 
         if (!complete)
         {

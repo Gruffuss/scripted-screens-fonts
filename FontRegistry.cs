@@ -25,8 +25,36 @@ internal static class FontRegistry
 
     private static readonly HashSet<string> Seen = new(StringComparer.Ordinal);
 
-    /// <summary>Font names registered so far, in discovery order.</summary>
-    internal static IReadOnlyCollection<string> Names => Seen;
+    /// <summary>
+    /// What is known about each registered font, for the MCP listing. Guarded by
+    /// <see cref="Seen"/>: the listing is read from the MCP server's thread while the main
+    /// thread is still registering.
+    /// </summary>
+    private static readonly List<KeyValuePair<string, string>> Catalogue = new();
+
+    /// <summary>Notes a registered font and where it came from.</summary>
+    internal static void Record(string name, string note)
+    {
+        lock (Seen)
+            Catalogue.Add(new KeyValuePair<string, string>(name, note));
+    }
+
+    /// <summary>How many fonts have been recorded, to tell when the list changed.</summary>
+    internal static int Count
+    {
+        get
+        {
+            lock (Seen)
+                return Catalogue.Count;
+        }
+    }
+
+    /// <summary>A copy of the catalogue, in registration order.</summary>
+    internal static List<KeyValuePair<string, string>> Snapshot()
+    {
+        lock (Seen)
+            return new List<KeyValuePair<string, string>>(Catalogue);
+    }
 
     /// <summary>
     /// Registers every loaded font asset TMP does not already know about.
@@ -54,7 +82,7 @@ internal static class FontRegistry
                 continue;
 
             var name = font.name;
-            if (string.IsNullOrEmpty(name) || !Seen.Add(name))
+            if (!Claim(name))
                 continue;
 
             try
@@ -63,11 +91,13 @@ internal static class FontRegistry
                 MaterialReferenceManager.AddFontAsset(font);
                 added++;
                 ScriptedScreensFontsPlugin.Log?.LogInfo($"Font available: <font=\"{name}\">");
-                WarnIfUiIncompatible(font, name);
+                Record(name, WarnIfUiIncompatible(font, name)
+                    ? "game font; its material lacks _CullMode, so a ScriptedScreens label using it logs a Unity error every frame -- avoid"
+                    : "game font");
             }
             catch (Exception ex)
             {
-                Seen.Remove(name);
+                Release(name);
                 ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not register font \"{name}\": {ex.Message}");
             }
         }
@@ -79,10 +109,21 @@ internal static class FontRegistry
     /// Reserves a font name for a caller that registers the asset itself.
     /// </summary>
     /// <returns><see langword="false"/> if the name is already taken.</returns>
-    internal static bool Claim(string name) => !string.IsNullOrEmpty(name) && Seen.Add(name);
+    internal static bool Claim(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return false;
+
+        lock (Seen)
+            return Seen.Add(name);
+    }
 
     /// <summary>Gives back a name claimed by <see cref="Claim"/> that went unused.</summary>
-    internal static void Release(string name) => Seen.Remove(name);
+    internal static void Release(string name)
+    {
+        lock (Seen)
+            Seen.Remove(name);
+    }
 
     /// <summary>
     /// Flags fonts that render correctly but make Unity log an error on every canvas
@@ -96,21 +137,24 @@ internal static class FontRegistry
     /// font the game itself uses on signage can still be unusable in a ScriptedScreens
     /// label. Registration is inert either way — only rendering triggers this.
     /// </remarks>
-    private static void WarnIfUiIncompatible(TMP_FontAsset font, string name)
+    /// <returns>Whether the font was flagged.</returns>
+    private static bool WarnIfUiIncompatible(TMP_FontAsset font, string name)
     {
         try
         {
             var material = font.material;
             if (material == null || material.HasProperty(CullModeProperty))
-                return;
+                return false;
 
             ScriptedScreensFontsPlugin.Log?.LogWarning(
                 $"Font \"{name}\" material \"{material.name}\" (shader \"{material.shader?.name}\") " +
                 $"has no {CullModeProperty}; using it in a UI label spams Unity errors.");
+            return true;
         }
         catch (Exception ex)
         {
             ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not inspect material for \"{name}\": {ex.Message}");
+            return false;
         }
     }
 }

@@ -50,12 +50,18 @@ internal sealed class FontRegistryLoader : MonoBehaviour
     {
         var burst = new WaitForSeconds(RescanIntervalSeconds);
 
+        // Docs register from here rather than at mod load, so it does not matter whether
+        // StationeersLua loaded before or after this mod; by the end of the burst it has or never will.
+        var docs = false;
         for (var i = 0; i < RescanCount; i++)
         {
-            FontLoader.TryLoadPending();
-            FontRegistry.ScanAndRegister();
+            docs = docs || FontsDocsTool.TryRegister();
+            Scan();
             yield return burst;
         }
+
+        if (!docs)
+            ScriptedScreensFontsPlugin.Log?.LogInfo("StationeersLua MCP registry not present; fonts docs not registered.");
 
         // Slow tail: catches fonts that arrive with prefabs streamed in later. Only newly
         // seen names log anything, so a quiet session stays quiet.
@@ -63,9 +69,17 @@ internal sealed class FontRegistryLoader : MonoBehaviour
 
         while (true)
         {
-            FontLoader.TryLoadPending();
-            FontRegistry.ScanAndRegister();
+            Scan();
             yield return heartbeat;
         }
+    }
+
+    private static void Scan()
+    {
+        var before = FontRegistry.Count;
+        FontLoader.TryLoadPending();
+        FontRegistry.ScanAndRegister();
+        if (FontRegistry.Count != before)
+            FontsDocsTool.RefreshAvailable();
     }
 }

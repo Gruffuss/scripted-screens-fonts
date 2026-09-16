@@ -50,11 +50,14 @@ Reading a wrong result:
 | what you see | what happened |
 |---|---|
 | the right typeface | the tag resolved |
-| the default typeface | TMP silently fell back |
-| a literal `<font="X">` | TMP rejected the tag; the name is wrong |
+| the default typeface | the font is not loaded: switched off in the config, or not registered yet |
+| a literal `<font="X">` | TMP rejected the tag; the name is wrong (case, or a file name used as a font name) |
 
-`FontTest.lua` renders every registered name as its own row, which makes all three visible at
-a glance.
+`examples/03-name-check.lua` renders a list of names one row each, which makes all three
+visible at a glance.
+
+The [ScriptedScreens Html](https://github.com/Gruffuss/scripted-screens-html) mod takes the
+same names in CSS `font-family`.
 
 ## Adding your own fonts
 
@@ -106,12 +109,16 @@ Anything else goes in **`ExtraCharacters`** in
 mean `<font="Barlow">` silently rendering some other typeface. Barlow, for example, is a text
 face: it has the punctuation and the maths but no arrows, shapes or box drawing at all. If
 you need an arrow from a font that lacks one, switch face for that character
-(`<font="noto-punc">→</font>`) or draw it in the vector layer.
+(`<font="noto-punc">→</font>`) or draw it another way, for example with
+[ScriptedScreens Vector](https://github.com/Gruffuss/scripted-screens-vector).
 
 ## Limits
 
-- **One 1024×1024 atlas per face, about 1 MB.** 36 faces is ~36 MB of texture memory. Prune
-  to the weights you actually use before loading several families.
+- **One 1024×1024 atlas per face, about 1 MB.** 36 faces is ~36 MB of texture memory. Switch
+  off the weights you do not use.
+- **Some of the game's own fonts log a Unity error every frame when used in a label** (their
+  material has no `_CullMode`). The mod names them in the log when it registers them; avoid
+  them in labels.
 - **The atlas is static.** It cannot grow at runtime and cannot spill into a second texture.
   If a font's coverage overflows it, the load logs `did not fit` and the remainder is absent;
   the fix is a smaller sampling size.
@@ -119,6 +126,32 @@ you need an arrow from a font that lacks one, switch face for that character
   nothing.
 - Fonts arriving from asset bundles register as they load, so the game's own list fills in
   over the first minutes of a session rather than all at once.
+
+## Examples
+
+In the mod's `examples/` folder, each one pasted as is into a Lua chip in a ScriptedScreens
+console:
+
+| file | shows |
+|---|---|
+| `01-font-tag.lua` | a font by name, switching faces mid-string, other tags on top, UI symbols |
+| `02-weights.lua` | every weight of Barlow and Barlow Condensed, and how a file name becomes a font name |
+| `03-name-check.lua` | whether a name resolves, with a wrong-case and a file-name row to show the failures |
+| `04-readout.lua` | a live readout updated every tick, three weights of one family |
+
+## AI editors (MCP)
+
+With [StationeersLua](https://steamcommunity.com/sharedfiles/filedetails/?id=3659911735)
+installed, an AI editor connected to its MCP server can read:
+
+- `stationeers://fonts/index` — a quick start written for AI editors: a label that runs as
+  written, the rules that fail silently, a symptom-to-cause table, and a list of every other
+  resource
+- `stationeers://fonts/available` — every font name registered right now and where it came
+  from, including the game fonts to avoid in labels
+- this guide one section per resource, the changelog, and the examples (search scope `fonts`)
+
+The same quick start ships as `QUICKSTART.md`. Without StationeersLua nothing changes.
 
 ## Requirements
 
@@ -135,10 +168,10 @@ Create `Stationeers.VS.User.props` next to the `.csproj` (gitignored):
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <!-- The folder CONTAINING the Stationeers game directory. -->
-    <SteamLibraryDirectory>D:\SteamLibrary\steamapps\common</SteamLibraryDirectory>
-    <!-- Only if Documents is redirected (OneDrive). Must be the folder that
+    <SteamLibraryDirectory>C:\Program Files (x86)\Steam\steamapps\common</SteamLibraryDirectory>
+    <!-- Only if the Documents folder is redirected. Must be the folder that
          actually holds modconfig.xml. -->
-    <StationeersDocumentsDirectory>C:\Users\$(username)\OneDrive\Documents\My Games\Stationeers</StationeersDocumentsDirectory>
+    <StationeersDocumentsDirectory>X:\path\to\Documents\My Games\Stationeers</StationeersDocumentsDirectory>
   </PropertyGroup>
 </Project>
 ```
