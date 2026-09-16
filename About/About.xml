@@ -41,13 +41,13 @@ Every available font name is written to [b]BepInEx/LogOutput.log[/b] ("Font avai
 The same files are [url=https://github.com/Gruffuss/scripted-screens-fonts]on GitHub[/url].
 
 [h2]AI editor support (MCP)[/h2]
-With [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3659911735]StationeersLua[/url] installed, an AI editor connected to its MCP server can read:
+With StationeersLua's MCP server switched on in its settings, an AI editor connected to it can read:
 [list]
 [*] [b]stationeers://fonts/index[/b] -- a brief written for AI: a label that runs as written, the rules that fail silently, and a map of every other page
 [*] [b]stationeers://fonts/available[/b] -- every font name registered right now, and where it came from
 [*] the guide one searchable page per section (search scope [b]fonts[/b]), the changelog and the four examples
 [/list]
-Nothing changes without StationeersLua; the mod works the same.
+With the MCP server off, the fonts work the same.
 
 [h2]Notes[/h2]
 [list]
@@ -78,8 +78,8 @@ Nothing changes without StationeersLua; the mod works the same.
 [list]
 [*] [url=https://github.com/StationeersLaunchPad/StationeersLaunchPad]StationeersLaunchPad[/url]
 [*] [url=https://github.com/BepInEx/BepInEx]BepInEx 5.x[/url]
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3666779631]ScriptedScreens[/url] — to use the fonts on consoles
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3659911735]StationeersLua[/url] — optional, for the MCP documentation
+[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3666779631]ScriptedScreens[/url] — the labels the fonts are used in
+[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3659911735]StationeersLua[/url] — the Lua chips that drive ScriptedScreens
 [/list]
 	</Description>
 	<WorkshopHandle>0</WorkshopHandle>
@@ -89,4 +89,9 @@ Nothing changes without StationeersLua; the mod works the same.
 		<Tag>StationeersLaunchPad</Tag>
 	</Tags>
 	<ModID>gruffuss.stationeers.scriptedscreens.fonts</ModID>
+	<Dependencies>
+		<Mod>
+			<Id>3666779631</Id>
+		</Mod>
+	</Dependencies>
 </ModMetadata>

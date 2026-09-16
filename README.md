@@ -160,14 +160,17 @@ installed, an AI editor connected to its MCP server can read:
   from, including the game fonts to avoid in labels
 - this guide one section per resource, the changelog, and the examples (search scope `fonts`)
 
-The same quick start ships as `QUICKSTART.md`. Without StationeersLua nothing changes.
+The same quick start ships as `QUICKSTART.md`. The MCP server is off by default in
+StationeersLua's own settings; the fonts work the same either way.
 
 ## Requirements
 
 - **BepInEx 5.x** and
   **[StationeersLaunchPad](https://github.com/StationeersLaunchPad/StationeersLaunchPad)**
-- **ScriptedScreens** if you want to use the fonts in consoles — the mod is useful without
-  it, but that is the point of it
+- **[ScriptedScreens](https://steamcommunity.com/sharedfiles/filedetails/?id=3666779631)**
+  — the labels the fonts are used in
+- **[StationeersLua](https://steamcommunity.com/sharedfiles/filedetails/?id=3659911735)**
+  — the Lua chips that drive ScriptedScreens (ScriptedScreens requires it)
 
 ## Building
 
