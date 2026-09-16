@@ -10,6 +10,7 @@ ss.ui.activate("main")
 local size = ui:size()
 local W, H = 460, 460
 if size then W, H = size.w, size.h end
+local S = W / 460  -- consoles report different canvas sizes; lay out for 460 and scale
 
 ui:clear()
 
@@ -24,9 +25,9 @@ local function label(id, y, h, text, fsize, color)
     ui:element({
         id = id,
         type = "label",
-        rect = { unit = "px", x = 16, y = y, w = W - 32, h = h },
+        rect = { unit = "px", x = 16 * S, y = y * S, w = W - 32 * S, h = h * S },
         props = { text = text },
-        style = { font_size = fsize, color = color, align = "left" },
+        style = { font_size = math.floor(fsize * S), color = color, align = "left" },
     })
 end
 
@@ -46,7 +47,7 @@ label("mixed", 140, 34,
 
 -- Other tags on top of a face
 label("tags", 184, 34,
-    '<font="Barlow Condensed"><cspace=0.12em>O2 </cspace><size=130%><color=#34D399>21.0</color></size> %</font>',
+    '<font="Barlow Condensed"><cspace=0.12em>OXYGEN</cspace> <size=130%><color=#34D399>21.0</color></size> %</font>',
     24, "#E4F1F7")
 
 -- Symbols every loaded face gets, if the font file has them: true minus, en dash, degree, approx

@@ -11,6 +11,7 @@ ss.ui.activate("main")
 local size = ui:size()
 local W, H = 460, 460
 if size then W, H = size.w, size.h end
+local S = W / 460  -- consoles report different canvas sizes; lay out for 460 and scale
 
 ui:clear()
 
@@ -24,9 +25,9 @@ ui:element({
 ui:element({
     id = "title",
     type = "label",
-    rect = { unit = "px", x = 16, y = 12, w = W - 32, h = 40 },
+    rect = { unit = "px", x = 16 * S, y = 12 * S, w = W - 32 * S, h = 40 * S },
     props = { text = '<font="Barlow Condensed SemiBold"><cspace=0.08em>ATMOSPHERE</cspace></font>' },
-    style = { font_size = 30, color = "#38BDF8", align = "left" },
+    style = { font_size = math.floor(30 * S), color = "#38BDF8", align = "left" },
 })
 
 local ROWS = {
@@ -37,22 +38,22 @@ local ROWS = {
 }
 
 local cells = {}
-local top, row = 70, (H - 90) / #ROWS
+local top, row = 70 * S, (H - 90 * S) / #ROWS
 for i, r in ipairs(ROWS) do
     local y = math.floor(top + (i - 1) * row)
     ui:element({
         id = r.key .. "_name",
         type = "label",
-        rect = { unit = "px", x = 16, y = y, w = W / 2, h = math.floor(row) },
+        rect = { unit = "px", x = 16 * S, y = y, w = W / 2, h = math.floor(row) },
         props = { text = '<font="Barlow Condensed">' .. r.name .. '</font>' },
-        style = { font_size = 22, color = "#7A93A6", align = "left" },
+        style = { font_size = math.floor(22 * S), color = "#7A93A6", align = "left" },
     })
     cells[r.key] = ui:element({
         id = r.key .. "_value",
         type = "label",
-        rect = { unit = "px", x = W / 2, y = y, w = W / 2 - 16, h = math.floor(row) },
+        rect = { unit = "px", x = W / 2, y = y, w = W / 2 - 16 * S, h = math.floor(row) },
         props = { text = "" },
-        style = { font_size = 34, color = "#E4F1F7", align = "right" },
+        style = { font_size = math.floor(34 * S), color = "#E4F1F7", align = "right" },
     })
 end
 

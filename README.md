@@ -116,9 +116,10 @@ Anything else goes in **`ExtraCharacters`** in
 **A glyph the font does not contain is skipped.** No substitution is attempted — that would
 mean `<font="Barlow">` silently rendering some other typeface. Barlow, for example, is a text
 face: it has the punctuation and the maths but no arrows, shapes or box drawing at all. If
-you need an arrow from a font that lacks one, switch face for that character
-(`<font="noto-punc">→</font>`) or draw it another way, for example with
-[ScriptedScreens Vector](https://github.com/Gruffuss/scripted-screens-vector).
+you need an arrow from a font that lacks one, add a font file that has it and switch face for
+that character (`<font="Your Font">→</font>`), or draw it another way, for example with
+[ScriptedScreens Vector](https://github.com/Gruffuss/scripted-screens-vector). The game's own
+symbol faces are no help here: most of them log an error every frame in a label (see Limits).
 
 ## Limits
 

@@ -65,7 +65,9 @@ end
   one the font file does not contain, does not draw. Barlow has no arrows, shapes or box
   drawing. Subscript digits are not in the set: write `CO2`.
 - **No substitution.** A missing glyph is not taken from another font. Switch face for that
-  character (`<font="noto-punc">→</font>`) or draw it another way.
+  character to a font file that has it, or draw it another way. Do not reach for the game's
+  symbol faces (`noto-punc` and most others): `stationeers://fonts/available` marks them as
+  logging an error every frame in a label.
 - **Adding a font file or toggling one needs a game restart.** Fonts are built once.
 - **Own fonts go in `Documents/My Games/Stationeers/fonts`, never in the mod folder**, which a
   Workshop update replaces.

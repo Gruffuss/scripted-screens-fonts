@@ -32,7 +32,7 @@ local function column(id, family, x)
             type = "label",
             rect = { unit = "px", x = x, y = math.floor(12 + (i - 1) * row), w = W / 2 - 16, h = math.floor(row) },
             props = { text = '<font="' .. name .. '">' .. (weight == "" and "Regular" or weight) .. ' 0123</font>' },
-            style = { font_size = math.min(28, math.floor(row) - 6), color = "#E4F1F7", align = "left" },
+            style = { font_size = math.floor(math.min(28 * W / 460, row - 6)), color = "#E4F1F7", align = "left" },
         })
     end
 end
