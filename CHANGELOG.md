@@ -4,8 +4,9 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## 0.2.0
 
-- Font files: `.ttf` and `.otf` files anywhere under `Assets/fonts` (subfolders included)
-  become fonts, named from the font's own metadata (`Barlow-Bold.ttf` is
+- Font files: `.ttf` and `.otf` files anywhere under `Documents/My Games/Stationeers/fonts`
+  (subfolders included, created on first launch, outside the mod so a Workshop update never
+  touches it) become fonts, named from the font's own metadata (`Barlow-Bold.ttf` is
   `<font="Barlow Bold">`). Ships the Barlow and Barlow Condensed families (SIL OFL 1.1).
 - Every font file has an on/off switch in the mod config, grouped by subfolder and family. A
   switched-off file is never built and costs no memory.

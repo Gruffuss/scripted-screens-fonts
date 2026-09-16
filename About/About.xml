@@ -18,7 +18,8 @@ Stationeers loads its fonts from asset bundles, where TextMeshPro's name lookup 
 
 [h2]Your own fonts[/h2]
 [list]
-[*] Drop font files anywhere under [b]mods/ScriptedScreensFonts/Assets/fonts[/b]; subfolders are fine
+[*] Drop font files anywhere under [b]Documents/My Games/Stationeers/fonts[/b] (created on first launch); subfolders are fine
+[*] Not in the mod's own folder: a Workshop update replaces it
 [*] The name is the font's own: [b]Barlow-Bold.ttf[/b] is [b]&lt;font="Barlow Bold"&gt;[/b], [b]Barlow-Regular.ttf[/b] is [b]&lt;font="Barlow"&gt;[/b]
 [*] Every file has an on/off switch in the mod settings, grouped by family; a switched-off font costs no memory
 [*] Restart the game after adding a file or changing a switch
@@ -59,7 +60,7 @@ Nothing changes without StationeersLua; the mod works the same.
 [h2]Changelog[/h2]
 [b]0.2.0[/b]
 [list]
-[*] [b]Your own fonts.[/b] .ttf and .otf files under Assets/fonts become fonts named from their own metadata; Barlow and Barlow Condensed included.
+[*] [b]Your own fonts.[/b] .ttf and .otf files in Documents/My Games/Stationeers/fonts become fonts named from their own metadata; Barlow and Barlow Condensed included.
 [*] An on/off switch per font file in the mod settings, grouped by family.
 [*] A fixed character set per font with common UI symbols, extendable with ExtraCharacters.
 [*] [b]MCP support for AI editors[/b]: a quick start, the live font list, the guide, the changelog and the examples.

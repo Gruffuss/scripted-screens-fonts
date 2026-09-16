@@ -6,7 +6,8 @@ Written for an editor or an AI styling console text. Everything here runs as wri
 
 A client-side mod that makes fonts usable by name in TextMeshPro rich text, including every
 ScriptedScreens `label`. It registers the game's own font assets, and builds fonts from
-`.ttf`/`.otf` files in its `Assets/fonts` folder. There is no Lua API: the only change is
+`.ttf`/`.otf` files: the ones it ships (Barlow, Barlow Condensed) and the player's own in
+`Documents/My Games/Stationeers/fonts`. There is no Lua API: the only change is
 that `<font="Name">` inside a label's text now resolves.
 
 The ScriptedScreens Html mod uses the same names in CSS `font-family`.
@@ -66,13 +67,15 @@ end
 - **No substitution.** A missing glyph is not taken from another font. Switch face for that
   character (`<font="noto-punc">→</font>`) or draw it another way.
 - **Adding a font file or toggling one needs a game restart.** Fonts are built once.
+- **Own fonts go in `Documents/My Games/Stationeers/fonts`, never in the mod folder**, which a
+  Workshop update replaces.
 - **Some of the game's own fonts log a Unity error every frame in a label** (their material
   lacks `_CullMode`). `stationeers://fonts/available` marks them; avoid them in labels.
 - **`<noparse>` anywhere in a label's text turns rich text off for the whole label.**
 - **Game fonts keep registering for the first minutes of a session.** A name missing from
   the list early may appear later.
-- Every font file can be switched off in the mod config (`Font files: <family>` sections); a
-  switched-off font does not resolve.
+- Every font file can be switched off in the mod config (`Your fonts: <family>` and
+  `Font files: <family>` sections); a switched-off font does not resolve.
 
 ## Symptom to cause
 

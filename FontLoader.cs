@@ -125,58 +125,97 @@ internal static class FontLoader
     internal static void Configure(string modDirectory, string extraCharacters, ConfigFile config)
     {
         _extraCharacters = extraCharacters ?? string.Empty;
-
-        var folder = Path.Combine(modDirectory, FontsFolder);
-        if (!Directory.Exists(folder))
-        {
-            ScriptedScreensFontsPlugin.Log?.LogInfo($"No font folder at \"{folder}\"; drop .ttf files there to add fonts.");
-            return;
-        }
-
-        // Recursive: organising fonts into per-project subfolders is the obvious thing to
-        // do, and a skipped subfolder looks identical to a font that failed to load.
-        var found = new List<string>();
-        found.AddRange(Directory.GetFiles(folder, "*.ttf", SearchOption.AllDirectories));
-        found.AddRange(Directory.GetFiles(folder, "*.otf", SearchOption.AllDirectories));
-        found.Sort(StringComparer.OrdinalIgnoreCase);
-
-        if (found.Count == 0)
-        {
-            ScriptedScreensFontsPlugin.Log?.LogInfo($"No .ttf or .otf files in \"{folder}\".");
-            return;
-        }
-
         _files = new List<string>();
-        foreach (var path in found)
-        {
-            var relative = path.Substring(folder.Length).Replace(Path.DirectorySeparatorChar, '/').TrimStart('/');
-            var enabled = config.Bind(
-                ConfigSection(relative),
-                ConfigName(Path.GetFileName(relative)),
-                true,
-                "Load this font file. Takes effect after a restart; a disabled file costs no memory.");
 
-            if (enabled.Value)
-                _files.Add(path);
-            else
-                ScriptedScreensFontsPlugin.Log?.LogInfo($"Font file disabled in config: {Path.GetFileName(path)}");
+        // The player's folder first, so a player's font can take over a bundled font's name.
+        // It lives outside the mod on purpose: a Workshop update replaces the mod folder, and
+        // fonts dropped in there would be lost with it.
+        var userFolder = UserFontsFolder();
+        if (userFolder != null)
+            Scan(userFolder, "Your fonts: ", config, create: true);
+
+        Scan(Path.Combine(modDirectory, FontsFolder), "Font files: ", config, create: false);
+    }
+
+    /// <summary>
+    /// <c>fonts</c> in the game's save folder (<c>Documents/My Games/Stationeers</c>, or the
+    /// path LaunchPad or the game settings override it with).
+    /// </summary>
+    private static string? UserFontsFolder()
+    {
+        try
+        {
+            var root = StationeersLaunchPad.LaunchPadPaths.SavePath;
+            if (string.IsNullOrEmpty(root))
+                root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Stationeers");
+
+            return Path.Combine(root, "fonts");
+        }
+        catch (Exception ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not resolve the game's save folder; only bundled fonts load: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static void Scan(string folder, string sectionPrefix, ConfigFile config, bool create)
+    {
+        try
+        {
+            if (!Directory.Exists(folder))
+            {
+                if (!create)
+                    return;
+
+                // Created so a player can find it; empty is fine.
+                Directory.CreateDirectory(folder);
+                ScriptedScreensFontsPlugin.Log?.LogInfo($"Created \"{folder}\"; put your .ttf and .otf files there.");
+                return;
+            }
+
+            // Recursive: organising fonts into per-project subfolders is the obvious thing to
+            // do, and a skipped subfolder looks identical to a font that failed to load.
+            var found = new List<string>();
+            found.AddRange(Directory.GetFiles(folder, "*.ttf", SearchOption.AllDirectories));
+            found.AddRange(Directory.GetFiles(folder, "*.otf", SearchOption.AllDirectories));
+            found.Sort(StringComparer.OrdinalIgnoreCase);
+            ScriptedScreensFontsPlugin.Log?.LogInfo($"{found.Count} font file(s) in \"{folder}\".");
+
+            foreach (var path in found)
+            {
+                var relative = path.Substring(folder.Length).Replace(Path.DirectorySeparatorChar, '/').TrimStart('/');
+                var enabled = config.Bind(
+                    ConfigSection(sectionPrefix, relative),
+                    ConfigName(Path.GetFileName(relative)),
+                    true,
+                    "Load this font file. Takes effect after a restart; a disabled file costs no memory.");
+
+                if (enabled.Value)
+                    _files!.Add(path);
+                else
+                    ScriptedScreensFontsPlugin.Log?.LogInfo($"Font file disabled in config: {relative}");
+            }
+        }
+        catch (Exception ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not read the font folder \"{folder}\": {ex.Message}");
         }
     }
 
     /// <summary>
-    /// One config section per subfolder and family, so a family's weights sit together.
+    /// One config section per folder, subfolder and family, so a family's weights sit together.
     /// The family is the file name up to its first <c>-</c> (<c>Barlow-Bold.ttf</c> is
     /// <c>Barlow</c>), the Google Fonts convention; the font's own family name is only known
     /// once the engine has read the file, which is later than LaunchPad reads the config.
     /// </summary>
-    private static string ConfigSection(string relative)
+    private static string ConfigSection(string prefix, string relative)
     {
         var slash = relative.LastIndexOf('/');
         var folder = slash < 0 ? string.Empty : relative.Substring(0, slash + 1);
         var stem = Path.GetFileNameWithoutExtension(relative);
         var dash = stem.IndexOf('-', StringComparison.Ordinal);
         var family = dash > 0 ? stem.Substring(0, dash) : stem;
-        return ConfigName("Font files: " + folder + family);
+        return ConfigName(prefix + folder + family);
     }
 
     /// <summary>BepInEx rejects these characters in section and key names.</summary>
@@ -404,6 +443,11 @@ internal static class FontLoader
     /// Names the asset the way an author would write it: family alone for the regular
     /// weight, family plus style otherwise, so Barlow-Bold.ttf becomes "Barlow Bold".
     /// </summary>
+    /// <remarks>
+    /// A contract, not a detail: ScriptedScreens Html looks registered faces up by this name
+    /// (case, spaces and dashes ignored) and maps <c>@font-face url(Family-Style.ttf)</c> onto
+    /// it. Changing the format breaks every page that names a font.
+    /// </remarks>
     private static string ComposeName(FaceInfo faceInfo)
     {
         var family = faceInfo.familyName;

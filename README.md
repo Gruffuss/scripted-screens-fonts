@@ -57,18 +57,25 @@ Reading a wrong result:
 visible at a glance.
 
 The [ScriptedScreens Html](https://github.com/Gruffuss/scripted-screens-html) mod takes the
-same names in CSS `font-family`.
+same names in CSS `font-family`: it lays pages out with exactly the fonts this mod registers,
+so a font you add here is available to pages too.
 
 ## Adding your own fonts
 
-Drop `.ttf` or `.otf` files anywhere under:
+Drop `.ttf` or `.otf` files anywhere under the `fonts` folder in the game's save folder:
 
 ```
-mods/ScriptedScreensFonts/Assets/fonts/
+Documents/My Games/Stationeers/fonts/
 ```
 
-Subfolders are scanned, so organising by project is fine. In the repo the same folder is
-`Assets/fonts/`, and the build copies it into the mod.
+The mod creates it on first launch (the log prints its exact path), and it follows the save
+path if you have moved it in the game or LaunchPad settings. Subfolders are scanned, so
+organising by project is fine.
+
+**Do not put your fonts in the mod's own folder.** `mods/ScriptedScreensFonts/Assets/fonts`
+holds the fonts that ship with the mod, and a Workshop update replaces the mod folder, taking
+anything added there with it. A font in your folder with the same name as a bundled one takes
+its place.
 
 **The name comes from the font's own metadata** — family, plus style when that is not
 Regular:
@@ -80,8 +87,9 @@ Regular:
 | `BarlowCondensed-SemiBoldItalic.ttf` | `<font="Barlow Condensed SemiBold Italic">` |
 
 **Every file gets an on/off toggle** in the mod config (LaunchPad's settings UI), grouped
-into one section per subfolder and family — `Font files: Barlow`, `Font files: GasUi/Barlow`
-— with the family taken from the file name up to its first `-`. A disabled file is never
+into one section per folder, subfolder and family — `Your fonts: Manrope`,
+`Your fonts: GasUi/Manrope` for yours, `Font files: Barlow` for the bundled ones — with the
+family taken from the file name up to its first `-`. A disabled file is never
 built, so it costs no memory. Use this to keep a whole family in the folder but load only the
 weights you use.
 
@@ -91,7 +99,7 @@ shortly after the game's TMP resources come up, and there is no rescan.
 **Ship the licence.** Most Google Fonts are SIL OFL, which permits bundling provided the
 copyright notice and licence travel with the font and it is not sold separately — but check
 per family rather than assuming. The font file itself is authoritative: its `name` table
-carries the licence in nameID 13. Barlow's `OFL.txt` sits next to the Barlow files here.
+carries the licence in nameID 13. Barlow's `OFL.txt` sits next to the bundled Barlow files.
 
 ## Character set
 
