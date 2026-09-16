@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BepInEx.Configuration;
 using TMPro;
 using UnityEngine;
@@ -139,15 +140,20 @@ internal static class FontLoader
 
     /// <summary>
     /// <c>fonts</c> in the game's save folder (<c>Documents/My Games/Stationeers</c>, or the
-    /// path LaunchPad or the game settings override it with).
+    /// path the game settings or LaunchPad override it with).
     /// </summary>
+    /// <remarks>
+    /// Read from the game's own setting, never through <c>StationeersLaunchPad.dll</c>:
+    /// LaunchPad flags any mod that references it as unsupported and shows a popup. LaunchPad
+    /// writes its save-path override into this same setting at startup.
+    /// </remarks>
     private static string? UserFontsFolder()
     {
         try
         {
-            var root = StationeersLaunchPad.LaunchPadPaths.SavePath;
+            var root = Assets.Scripts.Serialization.Settings.CurrentData?.SavePath;
             if (string.IsNullOrEmpty(root))
-                root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "My Games", "Stationeers");
+                root = StationSaveUtils.DefaultPath;
 
             return Path.Combine(root, "fonts");
         }
@@ -215,6 +221,11 @@ internal static class FontLoader
         var stem = Path.GetFileNameWithoutExtension(relative);
         var dash = stem.IndexOf('-', StringComparison.Ordinal);
         var family = dash > 0 ? stem.Substring(0, dash) : stem;
+
+        // Manrope/Manrope-Bold.ttf reads "Manrope", not "Manrope/Manrope".
+        if (folder.TrimEnd('/').Split('/').Last().Equals(family, StringComparison.OrdinalIgnoreCase))
+            return ConfigName(prefix + folder.TrimEnd('/'));
+
         return ConfigName(prefix + folder + family);
     }
 
