@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using BepInEx.Configuration;
 using TMPro;
 using UnityEngine;
 using UnityEngine.TextCore;
@@ -108,21 +109,93 @@ internal static class FontLoader
     }
 
     private static bool _engineReady;
-    private static string? _modDirectory;
+    private static List<string>? _files;
     private static string _extraCharacters = string.Empty;
-    private static bool _pending;
 
-    /// <summary>Records where to look, to be acted on by <see cref="TryLoadPending"/>.</summary>
-    internal static void Configure(string modDirectory, string extraCharacters)
+    /// <summary>
+    /// Finds the font files and binds one on/off toggle per file, to be loaded later by
+    /// <see cref="TryLoadPending"/>.
+    /// </summary>
+    /// <remarks>
+    /// Bound here, at mod load, rather than when the atlases are built: LaunchPad's settings
+    /// UI reads <c>ModBehaviour.Config</c>, and an entry that appears minutes later is not
+    /// guaranteed to show. A disabled file is never built,
+    /// so it costs no atlas memory; toggling needs a restart like adding a file does.
+    /// </remarks>
+    internal static void Configure(string modDirectory, string extraCharacters, ConfigFile config)
     {
-        _modDirectory = modDirectory;
         _extraCharacters = extraCharacters ?? string.Empty;
-        _pending = true;
+
+        var folder = Path.Combine(modDirectory, FontsFolder);
+        if (!Directory.Exists(folder))
+        {
+            ScriptedScreensFontsPlugin.Log?.LogInfo($"No font folder at \"{folder}\"; drop .ttf files there to add fonts.");
+            return;
+        }
+
+        // Recursive: organising fonts into per-project subfolders is the obvious thing to
+        // do, and a skipped subfolder looks identical to a font that failed to load.
+        var found = new List<string>();
+        found.AddRange(Directory.GetFiles(folder, "*.ttf", SearchOption.AllDirectories));
+        found.AddRange(Directory.GetFiles(folder, "*.otf", SearchOption.AllDirectories));
+        found.Sort(StringComparer.OrdinalIgnoreCase);
+
+        if (found.Count == 0)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogInfo($"No .ttf or .otf files in \"{folder}\".");
+            return;
+        }
+
+        _files = new List<string>();
+        foreach (var path in found)
+        {
+            var relative = path.Substring(folder.Length).Replace(Path.DirectorySeparatorChar, '/').TrimStart('/');
+            var enabled = config.Bind(
+                ConfigSection(relative),
+                ConfigName(Path.GetFileName(relative)),
+                true,
+                "Load this font file. Takes effect after a restart; a disabled file costs no memory.");
+
+            if (enabled.Value)
+                _files.Add(path);
+            else
+                ScriptedScreensFontsPlugin.Log?.LogInfo($"Font file disabled in config: {Path.GetFileName(path)}");
+        }
     }
 
     /// <summary>
-    /// Loads the fonts folder once TMP's shaders are reachable, and reports whether that
-    /// has happened yet.
+    /// One config section per subfolder and family, so a family's weights sit together.
+    /// The family is the file name up to its first <c>-</c> (<c>Barlow-Bold.ttf</c> is
+    /// <c>Barlow</c>), the Google Fonts convention; the font's own family name is only known
+    /// once the engine has read the file, which is later than LaunchPad reads the config.
+    /// </summary>
+    private static string ConfigSection(string relative)
+    {
+        var slash = relative.LastIndexOf('/');
+        var folder = slash < 0 ? string.Empty : relative.Substring(0, slash + 1);
+        var stem = Path.GetFileNameWithoutExtension(relative);
+        var dash = stem.IndexOf('-', StringComparison.Ordinal);
+        var family = dash > 0 ? stem.Substring(0, dash) : stem;
+        return ConfigName("Font files: " + folder + family);
+    }
+
+    /// <summary>BepInEx rejects these characters in section and key names.</summary>
+    private static readonly char[] InvalidConfigChars = { '=', '\n', '\t', '\\', '"', '\'', '[', ']' };
+
+    private static string ConfigName(string name)
+    {
+        var chars = name.ToCharArray();
+        for (var i = 0; i < chars.Length; i++)
+        {
+            if (Array.IndexOf(InvalidConfigChars, chars[i]) >= 0)
+                chars[i] = '_';
+        }
+
+        return new string(chars);
+    }
+
+    /// <summary>
+    /// Builds the enabled fonts once TMP's shaders are reachable.
     /// </summary>
     /// <remarks>
     /// Not done at mod load. <c>ShaderUtilities.ShaderRef_MobileSDF</c> resolves through
@@ -133,44 +206,13 @@ internal static class FontLoader
     /// </remarks>
     internal static void TryLoadPending()
     {
-        if (!_pending || _modDirectory == null)
+        if (_files == null || ShaderUtilities.ShaderRef_MobileSDF == null)
             return;
 
-        if (ShaderUtilities.ShaderRef_MobileSDF == null)
-            return;
+        var files = _files;
+        _files = null;
 
-        _pending = false;
-        LoadFolder(_modDirectory, _extraCharacters);
-    }
-
-    /// <summary>
-    /// Loads every font file in <paramref name="modDirectory"/>'s fonts folder.
-    /// </summary>
-    /// <param name="modDirectory">Directory holding the mod assembly.</param>
-    /// <param name="extraCharacters">Characters to include beyond ASCII and Latin-1.</param>
-    private static void LoadFolder(string modDirectory, string extraCharacters)
-    {
-        var folder = Path.Combine(modDirectory, FontsFolder);
-        if (!Directory.Exists(folder))
-        {
-            ScriptedScreensFontsPlugin.Log?.LogInfo($"No font folder at \"{folder}\"; drop .ttf files there to add fonts.");
-            return;
-        }
-
-        // Recursive: organising fonts into per-project subfolders is the obvious thing to
-        // do, and a skipped subfolder looks identical to a font that failed to load.
-        var files = new List<string>();
-        files.AddRange(Directory.GetFiles(folder, "*.ttf", SearchOption.AllDirectories));
-        files.AddRange(Directory.GetFiles(folder, "*.otf", SearchOption.AllDirectories));
-
-        if (files.Count == 0)
-        {
-            ScriptedScreensFontsPlugin.Log?.LogInfo($"No .ttf or .otf files in \"{folder}\".");
-            return;
-        }
-
-        var charset = BuildCharacterSet(extraCharacters);
-
+        var charset = BuildCharacterSet(_extraCharacters);
         foreach (var file in files)
         {
             try

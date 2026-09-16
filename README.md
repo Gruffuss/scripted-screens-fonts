@@ -76,8 +76,14 @@ Regular:
 | `Barlow-Bold.ttf` | `<font="Barlow Bold">` |
 | `BarlowCondensed-SemiBoldItalic.ttf` | `<font="Barlow Condensed SemiBold Italic">` |
 
-**A restart is required.** Atlases are built once, shortly after the game's TMP resources come
-up. There is no rescan, so adding a file mid-session does nothing.
+**Every file gets an on/off toggle** in the mod config (LaunchPad's settings UI), grouped
+into one section per subfolder and family — `Font files: Barlow`, `Font files: GasUi/Barlow`
+— with the family taken from the file name up to its first `-`. A disabled file is never
+built, so it costs no memory. Use this to keep a whole family in the folder but load only the
+weights you use.
+
+**A restart is required** after adding a file or changing a toggle. Atlases are built once,
+shortly after the game's TMP resources come up, and there is no rescan.
 
 **Ship the licence.** Most Google Fonts are SIL OFL, which permits bundling provided the
 copyright notice and licence travel with the font and it is not sold separately — but check

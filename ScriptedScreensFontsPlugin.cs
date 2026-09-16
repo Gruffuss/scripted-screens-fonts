@@ -54,7 +54,7 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
 
             var modDirectory = System.IO.Path.GetDirectoryName(typeof(ScriptedScreensFontsPlugin).Assembly.Location);
             if (!string.IsNullOrEmpty(modDirectory))
-                FontLoader.Configure(modDirectory, extraCharacters.Value);
+                FontLoader.Configure(modDirectory, extraCharacters.Value, Config);
 
             FontRegistryLoader.Install();
             Log.LogInfo("Watching for game fonts to register with TextMeshPro.");
