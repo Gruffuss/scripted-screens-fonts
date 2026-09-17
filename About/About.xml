@@ -5,82 +5,36 @@
 	<Version>0.2.0.0</Version>
 	<Description>
 [h1]ScriptedScreens Fonts[/h1]
-[i]Client-side only. Nothing on disk is modified.[/i]
+[i]Real typefaces on ScriptedScreens consoles. Client-side only.[/i]
 
-Real typefaces on your consoles. Use the game's own fonts and any [b].ttf[/b] or [b].otf[/b] file by name in a [b]ScriptedScreens[/b] label, with the standard TextMeshPro tag:
+Use the game's own fonts and any .ttf or .otf file by name in a ScriptedScreens label, with the standard tag: [code]&lt;font="Barlow Condensed"&gt;TANK 3  84%[/code]. There is nothing to call from Lua; the tag simply works.
 
-[code]props = { text = '&lt;font="Barlow Condensed"&gt;TANK 3  84%' }[/code]
-
-Ships with the [b]Barlow[/b] and [b]Barlow Condensed[/b] families, every weight from Thin to Black with italics.
-
-[h2]Why it is needed[/h2]
-Stationeers loads its fonts from asset bundles, where TextMeshPro's name lookup never finds them, so a [b]&lt;font&gt;[/b] tag errors out. This mod registers them directly, and builds new fonts from the files in its folder. There is no Lua API: the tag simply works, in every label, and ScriptedScreens is not patched.
-
-[h2]Your own fonts[/h2]
+[h2]Highlights[/h2]
 [list]
-[*] Drop font files anywhere under [b]Documents/My Games/Stationeers/fonts[/b] (created on first launch); subfolders are fine
-[*] Not in the mod's own folder: a Workshop update replaces it
-[*] The name is the font's own: [b]Barlow-Bold.ttf[/b] is [b]&lt;font="Barlow Bold"&gt;[/b], [b]Barlow-Regular.ttf[/b] is [b]&lt;font="Barlow"&gt;[/b]
-[*] Every file has an on/off switch in the mod settings, grouped by family; a switched-off font costs no memory
-[*] Restart the game after adding a file or changing a switch
-[*] Ship the font's licence with it; the included Barlow files are SIL Open Font License 1.1
+[*] Ships the Barlow and Barlow Condensed families, every weight with italics
+[*] Add your own fonts: drop files into [b]Documents/My Games/Stationeers/fonts[/b]
+[*] Names come from the font itself: Barlow-Bold.ttf is &lt;font="Barlow Bold"&gt;
+[*] An on/off switch per font file in the mod settings
+[*] Dashes, maths symbols, arrows and box drawing included when the font has them
 [/list]
-
-[h2]Characters[/h2]
-Each font is built once with printable ASCII, Latin-1 (accents, ° ± µ ² ³) and common UI symbols: dashes and curly quotes, − ≈ ≠ ≤ ≥ ∞ √ Δ π Ω, arrows, shapes, block bars and box drawing. Add more in the [b]ExtraCharacters[/b] setting. A character the font file does not contain is left out rather than drawn from another typeface; Barlow, for example, has no arrows.
 
 [h2]Getting started[/h2]
-Everything is in the mod folder ([i]Documents/My Games/Stationeers/mods/ScriptedScreensFonts[/i]):
-[list]
-[*] [b]examples/[/b] -- four scripts that each run on paste: a font tag, every weight, a name check, a live readout
-[*] [b]QUICKSTART.md[/b] -- one page: a label that runs as written, the mistakes that fail silently, a symptom-to-cause table
-[*] [b]README.md[/b] -- the guide
-[*] [b]CHANGELOG.md[/b] -- the full release history
-[/list]
-Every available font name is written to [b]BepInEx/LogOutput.log[/b] ("Font available:"). Names are case sensitive; a wrong name prints its tag literally.
-The same files are [url=https://github.com/Gruffuss/scripted-screens-fonts]on GitHub[/url].
+The mod folder holds four examples that run on paste, a quick start (QUICKSTART.md), a guide (README.md) and the release history (CHANGELOG.md), also [url=https://github.com/Gruffuss/scripted-screens-fonts]on GitHub[/url]. Every available font name is written to BepInEx/LogOutput.log. With StationeersLua's MCP server on, AI editors can read the same docs and the live font list.
 
-[h2]AI editor support (MCP)[/h2]
-With StationeersLua's MCP server switched on in its settings, an AI editor connected to it can read:
+[h2]What's new in 0.2.0[/h2]
 [list]
-[*] [b]stationeers://fonts/index[/b] -- a brief written for AI: a label that runs as written, the rules that fail silently, and a map of every other page
-[*] [b]stationeers://fonts/available[/b] -- every font name registered right now, and where it came from
-[*] the guide one searchable page per section (search scope [b]fonts[/b]), the changelog and the four examples
+[*] Load your own .ttf and .otf files, with a switch for each
+[*] Bundled Barlow and Barlow Condensed
+[*] Examples, a quick start and docs for AI editors
 [/list]
-With the MCP server off, the fonts work the same.
-
-[h2]Notes[/h2]
-[list]
-[*] Some of the game's own fonts make Unity log an error every frame when used in a label; the mod names them in the log and in the MCP list
-[*] Each font file costs about 1 MB of texture memory; switch off the weights you do not use
-[*] The game's own fonts keep arriving for the first minutes of a session
-[*] [url=https://github.com/Gruffuss/scripted-screens-html]ScriptedScreens Html[/url] uses these fonts by the same names in CSS
-[/list]
-
-[h2]Changelog[/h2]
-[b]0.2.0[/b]
-[list]
-[*] [b]Your own fonts.[/b] .ttf and .otf files in Documents/My Games/Stationeers/fonts become fonts named from their own metadata; Barlow and Barlow Condensed included.
-[*] An on/off switch per font file in the mod settings, grouped by family.
-[*] A fixed character set per font with common UI symbols, extendable with ExtraCharacters.
-[*] [b]MCP support for AI editors[/b]: a quick start, the live font list, the guide, the changelog and the examples.
-[*] examples/, QUICKSTART.md and CHANGELOG.md ship in the mod folder.
-[/list]
-[b]0.1.0[/b]
-[list]
-[*] The game's own fonts are usable by name in ScriptedScreens labels.
-[/list]
-
-[h2]Source[/h2]
-[url=https://github.com/Gruffuss/scripted-screens-fonts]github.com/Gruffuss/scripted-screens-fonts[/url] — MIT licensed. The bundled fonts keep their own licence (SIL OFL 1.1). Issues and pull requests welcome.
+Full history: [url=https://github.com/Gruffuss/scripted-screens-fonts/blob/main/CHANGELOG.md]CHANGELOG.md[/url].
 
 [h2]Requirements[/h2]
 [list]
-[*] [url=https://github.com/StationeersLaunchPad/StationeersLaunchPad]StationeersLaunchPad[/url]
-[*] [url=https://github.com/BepInEx/BepInEx]BepInEx 5.x[/url]
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3666779631]ScriptedScreens[/url] — the labels the fonts are used in
-[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3659911735]StationeersLua[/url] — the Lua chips that drive ScriptedScreens
+[*] [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3666779631]ScriptedScreens[/url] (required; it brings StationeersLua)
+[*] [url=https://github.com/StationeersLaunchPad/StationeersLaunchPad]StationeersLaunchPad[/url] with [url=https://github.com/BepInEx/BepInEx]BepInEx 5.x[/url]
 [/list]
+Source: [url=https://github.com/Gruffuss/scripted-screens-fonts]github.com/Gruffuss/scripted-screens-fonts[/url] (MIT; bundled fonts SIL OFL 1.1).
 	</Description>
 	<WorkshopHandle>0</WorkshopHandle>
 	<Tags>
