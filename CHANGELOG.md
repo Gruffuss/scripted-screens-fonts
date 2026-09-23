@@ -2,6 +2,12 @@
 
 Newest first. The workshop page carries only the latest releases; this file has all of them.
 
+## Unreleased
+
+- Fonts can be downloaded: the `FontUrls` setting takes links to `.ttf`/`.otf` files or Google
+  Fonts CSS links. Each is fetched once into `fonts/downloaded` in the save folder, named from
+  the font's own metadata, and loads from disk afterwards.
+
 ## 0.2.0
 
 - Font files: `.ttf` and `.otf` files anywhere under `Documents/My Games/Stationeers/fonts`

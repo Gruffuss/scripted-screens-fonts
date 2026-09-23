@@ -147,7 +147,17 @@ internal static class FontLoader
     /// LaunchPad flags any mod that references it as unsupported and shows a popup. LaunchPad
     /// writes its save-path override into this same setting at startup.
     /// </remarks>
-    private static string? UserFontsFolder()
+    /// <summary>
+    /// A file downloaded on this launch. It was not on disk when <see cref="Configure"/> scanned,
+    /// so it loads without a config switch this time; the next launch finds it and binds one.
+    /// </summary>
+    internal static void AddDownloaded(string path)
+    {
+        if (_files != null && !_files.Exists(f => string.Equals(f, path, StringComparison.OrdinalIgnoreCase)))
+            _files.Add(path);
+    }
+
+    internal static string? UserFontsFolder()
     {
         try
         {
@@ -256,7 +266,8 @@ internal static class FontLoader
     /// </remarks>
     internal static void TryLoadPending()
     {
-        if (_files == null || ShaderUtilities.ShaderRef_MobileSDF == null)
+        // Downloads first: a font fetched on this launch is loaded on this launch.
+        if (_files == null || FontDownloader.Busy || ShaderUtilities.ShaderRef_MobileSDF == null)
             return;
 
         var files = _files;

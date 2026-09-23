@@ -56,7 +56,25 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
             if (!string.IsNullOrEmpty(modDirectory))
                 FontLoader.Configure(modDirectory, extraCharacters.Value, Config);
 
-            FontRegistryLoader.Install();
+            var fontUrls = Config.Bind(
+                "Fonts",
+                "FontUrls",
+                "",
+                "Fonts to download: links to .ttf or .otf files, or Google Fonts CSS links such as "
+                + "https://fonts.googleapis.com/css2?family=Manrope:wght@400;700 , separated by spaces or commas. "
+                + "Each is downloaded once into the fonts/downloaded folder in your save folder and then "
+                + "loads from there. Takes effect after a restart.");
+
+            System.Collections.IEnumerator? download = null;
+            var urls = FontDownloader.ParseUrls(fontUrls.Value);
+            var userFolder = FontLoader.UserFontsFolder();
+            if (urls.Count > 0 && userFolder != null)
+            {
+                FontDownloader.Prepare(urls);
+                download = FontDownloader.Run(urls, System.IO.Path.Combine(userFolder, "downloaded"));
+            }
+
+            FontRegistryLoader.Install(download);
             Log.LogInfo("Watching for game fonts to register with TextMeshPro.");
         }
         catch (System.Exception ex)

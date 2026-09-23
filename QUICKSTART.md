@@ -69,6 +69,10 @@ end
   symbol faces (`noto-punc` and most others): `stationeers://fonts/available` marks them as
   logging an error every frame in a label.
 - **Adding a font file or toggling one needs a game restart.** Fonts are built once.
+- **Fonts can also be downloaded:** links in the `FontUrls` setting (a `.ttf`/`.otf` file, or a
+  Google Fonts CSS link such as `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700`)
+  are fetched once into `fonts/downloaded` and named from the font (`Manrope-Bold` is
+  `<font="Manrope Bold">`). WOFF2 is not read.
 - **Own fonts go in `Documents/My Games/Stationeers/fonts`, never in the mod folder**, which a
   Workshop update replaces.
 - **Some of the game's own fonts log a Unity error every frame in a label** (their material

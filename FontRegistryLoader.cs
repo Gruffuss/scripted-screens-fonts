@@ -21,8 +21,14 @@ internal sealed class FontRegistryLoader : MonoBehaviour
     private const float RescanIntervalSeconds = 2f;
     private const float HeartbeatIntervalSeconds = 20f;
 
-    internal static void Install()
+    private static IEnumerator? _download;
+    private Coroutine? _rescan;
+
+    /// <param name="download">Font downloads to run once, on this component, so a scene load
+    /// that restarts the rescan window cannot cut one off halfway.</param>
+    internal static void Install(IEnumerator? download)
     {
+        _download = download;
         var host = new GameObject(nameof(ScriptedScreensFonts))
         {
             hideFlags = HideFlags.HideAndDontSave
@@ -35,15 +41,25 @@ internal sealed class FontRegistryLoader : MonoBehaviour
     private void OnEnable()
     {
         SceneManager.sceneLoaded += OnSceneLoaded;
-        StartCoroutine(RescanWindow());
+        if (_download != null)
+        {
+            StartCoroutine(_download);
+            _download = null;
+        }
+
+        _rescan = StartCoroutine(RescanWindow());
     }
 
     private void OnDisable() => SceneManager.sceneLoaded -= OnSceneLoaded;
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
-        StopAllCoroutines();
-        StartCoroutine(RescanWindow());
+        // Only the rescan: StopAllCoroutines would also kill a download in flight and leave
+        // FontDownloader.Busy set for ever, so no file font would ever load.
+        if (_rescan != null)
+            StopCoroutine(_rescan);
+
+        _rescan = StartCoroutine(RescanWindow());
     }
 
     private static IEnumerator RescanWindow()

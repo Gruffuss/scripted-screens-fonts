@@ -101,6 +101,24 @@ copyright notice and licence travel with the font and it is not sold separately 
 per family rather than assuming. The font file itself is authoritative: its `name` table
 carries the licence in nameID 13. Barlow's `OFL.txt` sits next to the bundled Barlow files.
 
+## Downloading fonts
+
+Instead of copying files, list links in **`FontUrls`** in the mod settings, separated by spaces
+or commas. Two kinds work:
+
+- a direct link to a `.ttf` or `.otf` file
+- a Google Fonts stylesheet link, which brings every weight it names:
+  `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700`
+
+Each link is downloaded **once**, into `Documents/My Games/Stationeers/fonts/downloaded`, named
+from the font itself (`Manrope-Bold.ttf`). From then on it loads from there like any of your
+fonts and needs no network. A font downloaded this launch is usable this launch; its on/off
+switch appears after the next restart. Removing a link does not delete its files; delete them
+from that folder.
+
+Variable fonts work through Google: it sends one ordinary file per weight you list. A
+variable `.ttf` linked directly loads only its default weight. WOFF2 files are not read.
+
 ## Character set
 
 Each font is rendered once into a fixed set:
