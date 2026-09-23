@@ -74,6 +74,16 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 download = FontDownloader.Run(urls, System.IO.Path.Combine(userFolder, "downloaded"));
             }
 
+            FontApi.Configure(Config.Bind(
+                "Fonts",
+                "PageFontHosts",
+                "fonts.googleapis.com fonts.gstatic.com",
+                "Hosts a page (a ScriptedScreens Html @font-face, or any mod through the fonts API) may "
+                + "download fonts from, separated by spaces or commas; subdomains included. A font file is "
+                + "read by native code, so list only hosts that serve fonts you trust: Google Fonts serves "
+                + "only its own curated files, a general CDN serves anything anyone uploads. Empty refuses "
+                + "every page download. Links in FontUrls are not limited by this. Applies at once."));
+
             FontRegistryLoader.Install(download);
             Log.LogInfo("Watching for game fonts to register with TextMeshPro.");
         }

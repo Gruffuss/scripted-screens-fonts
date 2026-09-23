@@ -7,6 +7,10 @@ Newest first. The workshop page carries only the latest releases; this file has 
 - Fonts can be downloaded: the `FontUrls` setting takes links to `.ttf`/`.otf` files or Google
   Fonts CSS links. Each is fetched once into `fonts/downloaded` in the save folder, named from
   the font's own metadata, and loads from disk afterwards.
+- Other mods can request a font at runtime (`FontApi.RequestFont`), which is how a ScriptedScreens
+  Html page's `@font-face` link can load a font. Page downloads are limited to the hosts in
+  `PageFontHosts` (default: Google Fonts only), share the download cache, respect switched-off
+  fonts, and are capped at 48 faces a session.
 
 ## 0.2.0
 

@@ -24,6 +24,9 @@ internal sealed class FontRegistryLoader : MonoBehaviour
     private static IEnumerator? _download;
     private Coroutine? _rescan;
 
+    /// <summary>The running loader, which also hosts runtime font requests (<see cref="FontApi"/>).</summary>
+    internal static FontRegistryLoader? Instance { get; private set; }
+
     /// <param name="download">Font downloads to run once, on this component, so a scene load
     /// that restarts the rescan window cannot cut one off halfway.</param>
     internal static void Install(IEnumerator? download)
@@ -40,6 +43,7 @@ internal sealed class FontRegistryLoader : MonoBehaviour
 
     private void OnEnable()
     {
+        Instance = this;
         SceneManager.sceneLoaded += OnSceneLoaded;
         if (_download != null)
         {

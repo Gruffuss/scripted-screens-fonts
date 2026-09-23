@@ -119,6 +119,29 @@ from that folder.
 Variable fonts work through Google: it sends one ordinary file per weight you list. A
 variable `.ttf` linked directly loads only its default weight. WOFF2 files are not read.
 
+### Fonts requested by a page
+
+Other mods can ask for a font at runtime — ScriptedScreens Html does it for a page's
+`@font-face { src: url(...) }`. A page is written by whoever built the console, and in
+multiplayer its source reaches every player, while a font file is read by native code. So a
+page may only download from the hosts in **`PageFontHosts`**, which defaults to Google Fonts
+alone (`fonts.googleapis.com fonts.gstatic.com`): Google serves only its own curated files,
+where a general CDN serves anything anyone uploads. A stylesheet's font links must pass the
+same check. Empty refuses every page download; the setting applies at once.
+
+Page fonts use the same `fonts/downloaded` cache, so each downloads once. A font you have
+switched off stays off, and a session builds at most 48 page font faces (about 1 MB each).
+
+For mod authors, the call, by reflection so neither mod needs the other to build:
+
+```csharp
+var api = Type.GetType("ScriptedScreensFonts.FontApi, ScriptedScreensFonts");
+api?.GetMethod("RequestFont")?.Invoke(null, new object[] { link, (Action<string[]>)(names => { /* "Manrope", "Manrope Bold" */ }) });
+```
+
+It returns `false` when the link is refused (the reason is logged) and otherwise calls back
+once, on the main thread, with the names the fonts are available under.
+
 ## Character set
 
 Each font is rendered once into a fixed set:

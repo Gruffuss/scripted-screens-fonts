@@ -110,6 +110,45 @@ internal static class FontLoader
     }
 
     private static bool _engineReady;
+    private static List<uint>? _charset;
+
+    /// <summary>File (full path) to the name it is available under, for every file loaded.</summary>
+    private static readonly Dictionary<string, string> LoadedByPath = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Files switched off in the config; a runtime request does not switch them back on.</summary>
+    private static readonly HashSet<string> Disabled = new(StringComparer.OrdinalIgnoreCase);
+
+    internal static bool IsDisabled(string path) => Disabled.Contains(Path.GetFullPath(path));
+
+    /// <summary>True until the launch's font files have been built; a late load waits for it.</summary>
+    internal static bool StartupPending => _files != null;
+
+    /// <summary>The name a loaded file is available under, or null if it has not been loaded.</summary>
+    internal static string? LoadedName(string path) =>
+        LoadedByPath.TryGetValue(Path.GetFullPath(path), out var name) ? name : null;
+
+    /// <summary>
+    /// Builds a font from a file now, after startup. Main thread only, and only once TMP's shaders
+    /// exist (<see cref="ShaderReady"/>).
+    /// </summary>
+    internal static string? LoadNow(string path)
+    {
+        var known = LoadedName(path);
+        if (known != null)
+            return known;
+
+        try
+        {
+            return Load(path, _charset ??= BuildCharacterSet(_extraCharacters));
+        }
+        catch (Exception ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not load \"{Path.GetFileName(path)}\": {ex}");
+            return null;
+        }
+    }
+
+    internal static bool ShaderReady => ShaderUtilities.ShaderRef_MobileSDF != null;
     private static List<string>? _files;
     private static string _extraCharacters = string.Empty;
 
@@ -207,9 +246,14 @@ internal static class FontLoader
                     "Load this font file. Takes effect after a restart; a disabled file costs no memory.");
 
                 if (enabled.Value)
+                {
                     _files!.Add(path);
+                }
                 else
+                {
+                    Disabled.Add(Path.GetFullPath(path));
                     ScriptedScreensFontsPlugin.Log?.LogInfo($"Font file disabled in config: {relative}");
+                }
             }
         }
         catch (Exception ex)
@@ -273,7 +317,7 @@ internal static class FontLoader
         var files = _files;
         _files = null;
 
-        var charset = BuildCharacterSet(_extraCharacters);
+        var charset = _charset ??= BuildCharacterSet(_extraCharacters);
         foreach (var file in files)
         {
             try
@@ -320,14 +364,15 @@ internal static class FontLoader
         return ordered;
     }
 
-    private static void Load(string path, List<uint> charset)
+    /// <returns>The name the font is available under, or null when it could not be loaded.</returns>
+    private static string? Load(string path, List<uint> charset)
     {
         if (!_engineReady)
         {
             if (FontEngine.InitializeFontEngine() != FontEngineError.Success)
             {
                 ScriptedScreensFontsPlugin.Log?.LogWarning("Could not initialise the font engine.");
-                return;
+                return null;
             }
 
             _engineReady = true;
@@ -338,7 +383,7 @@ internal static class FontLoader
         if (FontEngine.LoadFontFace(File.ReadAllBytes(path), SamplingPointSize) != FontEngineError.Success)
         {
             ScriptedScreensFontsPlugin.Log?.LogWarning($"\"{file}\" is not a font file the engine can read.");
-            return;
+            return null;
         }
 
         var faceInfo = FontEngine.GetFaceInfo();
@@ -346,8 +391,10 @@ internal static class FontLoader
 
         if (!FontRegistry.Claim(fontName))
         {
+            // The name still resolves, to whichever file claimed it first.
             ScriptedScreensFontsPlugin.Log?.LogWarning($"\"{file}\" declares the name \"{fontName}\", which is already registered; skipping.");
-            return;
+            LoadedByPath[Path.GetFullPath(path)] = fontName;
+            return fontName;
         }
 
         var asset = ScriptableObject.CreateInstance<TMP_FontAsset>();
@@ -416,7 +463,7 @@ internal static class FontLoader
         {
             FontRegistry.Release(fontName);
             ScriptedScreensFontsPlugin.Log?.LogWarning($"\"{file}\" has none of the requested characters.");
-            return;
+            return null;
         }
 
         var complete = FontEngine.TryAddGlyphsToTexture(
@@ -459,6 +506,9 @@ internal static class FontLoader
             ScriptedScreensFontsPlugin.Log?.LogWarning(
                 $"\"{fontName}\" did not fit {AtlasSize}x{AtlasSize}; some characters are missing.");
         }
+
+        LoadedByPath[Path.GetFullPath(path)] = fontName;
+        return fontName;
     }
 
     /// <summary>

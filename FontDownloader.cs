@@ -66,23 +66,12 @@ internal static class FontDownloader
             if (urls.Count == 0)
                 yield break;
 
-            Directory.CreateDirectory(folder);
-            var index = ReadIndex(folder);
-
             foreach (var url in urls)
             {
-                var key = url.AbsoluteUri;
-                if (index.TryGetValue(key, out var files) && files.TrueForAll(f => File.Exists(Path.Combine(folder, f))))
+                if (TryCached(url, folder, out _))
                     continue;
 
-                var produced = new List<string>();
-                yield return Fetch(url, folder, produced);
-
-                if (produced.Count == 0)
-                    continue;
-
-                index[key] = produced;
-                WriteIndex(folder, index);
+                yield return Fetch(url, folder, null, new List<string>());
             }
         }
         finally
@@ -91,7 +80,53 @@ internal static class FontDownloader
         }
     }
 
-    private static IEnumerator Fetch(Uri url, string folder, List<string> produced)
+    /// <summary>
+    /// The files a URL produced on an earlier download, when every one is still on disk.
+    /// One index for the whole session, so two downloads running at once cannot overwrite each
+    /// other's entries (both run on the main thread, interleaved at their yields).
+    /// </summary>
+    internal static bool TryCached(Uri url, string folder, out List<string> paths)
+    {
+        paths = new List<string>();
+        if (!Index(folder).TryGetValue(url.AbsoluteUri, out var files))
+            return false;
+
+        foreach (var file in files)
+        {
+            var path = Path.Combine(folder, file);
+            if (!File.Exists(path))
+                return false;
+
+            paths.Add(path);
+        }
+
+        return paths.Count > 0;
+    }
+
+    private static Dictionary<string, List<string>>? _index;
+
+    private static Dictionary<string, List<string>> Index(string folder) => _index ??= ReadIndex(folder);
+
+    /// <summary>
+    /// Downloads a URL (following a stylesheet to its font files) into <paramref name="folder"/>,
+    /// adds the saved files' full paths to <paramref name="produced"/> and records them in the
+    /// index. <paramref name="allowed"/>, when given, must accept every URL fetched, the
+    /// stylesheet's font links included.
+    /// </summary>
+    internal static IEnumerator Fetch(Uri url, string folder, Func<Uri, bool>? allowed, List<string> produced)
+    {
+        Directory.CreateDirectory(folder);
+        yield return FetchFiles(url, folder, allowed, produced);
+
+        if (produced.Count == 0)
+            yield break;
+
+        var index = Index(folder);
+        index[url.AbsoluteUri] = produced.ConvertAll(Path.GetFileName);
+        WriteIndex(folder, index);
+    }
+
+    private static IEnumerator FetchFiles(Uri url, string folder, Func<Uri, bool>? allowed, List<string> produced)
     {
         using var request = UnityWebRequest.Get(url);
         request.timeout = TimeoutSeconds;
@@ -117,6 +152,13 @@ internal static class FontDownloader
             if (!Uri.TryCreate(match.Groups[1].Value, UriKind.RelativeOrAbsolute, out var reference)
                 || !Uri.TryCreate(url, reference, out var fontUrl) || !seen.Add(fontUrl.AbsoluteUri))
                 continue;
+
+            // An allowed stylesheet must not be a way to reach a host that is not allowed.
+            if (allowed != null && !allowed(fontUrl))
+            {
+                ScriptedScreensFontsPlugin.Log?.LogWarning($"Font link {fontUrl} in {url} refused: its host is not in PageFontHosts.");
+                continue;
+            }
 
             using var font = UnityWebRequest.Get(fontUrl);
             font.timeout = TimeoutSeconds;
@@ -164,7 +206,7 @@ internal static class FontDownloader
             var path = Path.Combine(folder, file);
 
             File.WriteAllBytes(path, bytes);
-            produced.Add(file);
+            produced.Add(path);
             FontLoader.AddDownloaded(path);
             ScriptedScreensFontsPlugin.Log?.LogInfo($"Downloaded {family} {style} as {file} ({bytes.Length / 1024} KB) from {url}");
         }
