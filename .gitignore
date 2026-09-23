@@ -444,3 +444,7 @@ FodyWeavers.xsd
 Stationeers.VS.User.props
 # Throwaway local probes
 scratch-backups/
+
+# Session briefs: local paths and session talk, never published
+CLAUDE.md
+HISTORY.md
