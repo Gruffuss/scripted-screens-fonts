@@ -110,6 +110,12 @@ internal static class FontLoader
     }
 
     private static bool _engineReady;
+    private static bool _kerningChecked;
+
+    private static bool _kerningLogged;
+
+    /// <summary>Whether to load each font's letter-pair spacing; the <c>Kerning</c> setting.</summary>
+    internal static bool Kerning = true;
     private static List<uint>? _charset;
 
     /// <summary>File (full path) to the name it is available under, for every file loaded.</summary>
@@ -380,7 +386,9 @@ internal static class FontLoader
 
         var file = Path.GetFileName(path);
 
-        if (FontEngine.LoadFontFace(File.ReadAllBytes(path), SamplingPointSize) != FontEngineError.Success)
+        var sourceBytes = File.ReadAllBytes(path);
+
+        if (FontEngine.LoadFontFace(sourceBytes, SamplingPointSize) != FontEngineError.Success)
         {
             ScriptedScreensFontsPlugin.Log?.LogWarning($"\"{file}\" is not a font file the engine can read.");
             return null;
@@ -492,11 +500,19 @@ internal static class FontLoader
 
         texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
         asset.ReadFontAssetDefinition();
+
+        // Kerning: see LoadKerning. After ReadFontAssetDefinition, which creates the lookup
+        // dictionary the records go into, and before another font's face replaces this one in
+        // the engine.
+        var kerningPairs = Kerning ? LoadKerning(asset, glyphIndexes, UnitsPerEm(sourceBytes), file) : 0;
+
         MaterialReferenceManager.AddFontAsset(asset);
+        if (Kerning)
+            WarnIfKerningIsOff();
 
         ScriptedScreensFontsPlugin.Log?.LogInfo(
-            $"Font available: <font=\"{fontName}\"> ({characterTable.Count} characters from {file})");
-        FontRegistry.Record(fontName, $"font file {file}, {characterTable.Count} characters"
+            $"Font available: <font=\"{fontName}\"> ({characterTable.Count} characters, {kerningPairs} kerning pairs from {file})");
+        FontRegistry.Record(fontName, $"font file {file}, {characterTable.Count} characters, {kerningPairs} kerning pairs"
             + (complete ? string.Empty : ", atlas full so some characters are missing"));
 
         if (!complete)
@@ -509,6 +525,174 @@ internal static class FontLoader
 
         LoadedByPath[Path.GetFullPath(path)] = fontName;
         return fontName;
+    }
+
+    /// <summary>
+    /// Fills the asset's feature table with the font's letter-pair spacing, so TMP draws "AV" and
+    /// "To" tucked together the way a browser does rather than evenly spaced.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Not <c>TMP_FontAsset.UpdateGlyphAdjustmentRecords</c>, which is what TMP itself calls: its
+    /// engine overload reads the **legacy `kern` table**, and a modern font does not have one.
+    /// Barlow keeps its kerning only in GPOS, so that route returned 0 pairs for all 36 faces.
+    /// </para>
+    /// <para>
+    /// The engine can read GPOS, through a different overload: walk the GPOS feature list, take
+    /// every feature tagged <c>kern</c>, and ask for the pair records of each of its lookups. The
+    /// native side does the parsing, so both PairPos formats are covered without a parser here.
+    /// No script or language filtering: all <c>kern</c> features in the table are loaded, which
+    /// for a Latin font is the one the default script uses anyway.
+    /// </para>
+    /// <para>
+    /// The records are keyed exactly as TMP keys them (second glyph in the high 16 bits), because
+    /// <c>TMP_Text</c> looks them up by that key while it lays out a line.
+    /// </para>
+    /// </remarks>
+    private static int LoadKerning(TMP_FontAsset asset, List<uint> glyphIndexes, int unitsPerEm, string file)
+    {
+        if (unitsPerEm <= 0)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning(
+                $"Could not read the em size of \"{file}\", so its kerning is left out.");
+            return 0;
+        }
+
+        var table = FontEngine.GetOpenTypeLayoutTable(OTL_TableType.GPOS);
+        if (table.features == null)
+            return 0;
+
+        // GPOS values are in the font's own design units; the glyph metrics TMP adds them to are
+        // in pixels at the sampling size. Unscaled, a -48 unit pair moved the text back further
+        // than the glyph was wide and every row collapsed into itself.
+        var scale = (float)SamplingPointSize / unitsPerEm;
+
+        var features = asset.fontFeatureTable;
+        var lookup = features.m_GlyphPairAdjustmentRecordLookupDictionary;
+        var added = 0;
+        var widest = 0f;
+
+        foreach (var feature in table.features)
+        {
+            if (!string.Equals(feature.tag, "kern", StringComparison.Ordinal) || feature.lookupIndexes == null)
+                continue;
+
+            foreach (var index in feature.lookupIndexes)
+            {
+                var records = FontEngine.GetPairAdjustmentRecords((int)index, glyphIndexes);
+                if (records == null)
+                    continue;
+
+                foreach (var record in records)
+                {
+                    // The engine returns a shared buffer closed by a zero record.
+                    if (record.firstAdjustmentRecord.glyphIndex == 0)
+                        break;
+
+                    var key = (record.secondAdjustmentRecord.glyphIndex << 16) | record.firstAdjustmentRecord.glyphIndex;
+                    if (lookup.ContainsKey(key))
+                        continue;
+
+                    var raw = Math.Abs(record.firstAdjustmentRecord.glyphValueRecord.xAdvance);
+                    if (raw > widest)
+                        widest = raw;
+
+                    var pair = new TMP_GlyphPairAdjustmentRecord(
+                        Scaled(record.firstAdjustmentRecord, scale),
+                        Scaled(record.secondAdjustmentRecord, scale));
+                    features.glyphPairAdjustmentRecords.Add(pair);
+                    lookup.Add(key, pair);
+                    added++;
+                }
+            }
+        }
+
+        // Once a session: the numbers behind the scale, so a wrong unit is visible in the log
+        // rather than only on a console. A Latin text face kerns by a few per cent of an em.
+        if (added > 0 && !_kerningLogged)
+        {
+            _kerningLogged = true;
+            ScriptedScreensFontsPlugin.Log?.LogInfo(
+                $"Kerning: {file} measures {unitsPerEm} units per em, widest pair {widest} units"
+                + $" = {widest * scale:0.##} px at {SamplingPointSize} pt.");
+        }
+
+        return added;
+    }
+
+    /// <summary>Converts one adjustment record from design units to pixels at the sampling size.</summary>
+    private static TMP_GlyphAdjustmentRecord Scaled(GlyphAdjustmentRecord record, float scale)
+    {
+        var value = record.glyphValueRecord;
+        return new TMP_GlyphAdjustmentRecord(
+            record.glyphIndex,
+            new TMP_GlyphValueRecord(
+                value.xPlacement * scale,
+                value.yPlacement * scale,
+                value.xAdvance * scale,
+                value.yAdvance * scale));
+    }
+
+    /// <summary>
+    /// Reads <c>head.unitsPerEm</c> out of the font file, which is the unit GPOS values are in.
+    /// The engine does not expose it (<c>FaceInfo</c> has no such field), and it is not always
+    /// 1000: TrueType outlines usually use 2048. Returns 0 if the file cannot be walked.
+    /// </summary>
+    private static int UnitsPerEm(byte[] font)
+    {
+        try
+        {
+            var directory = 0;
+
+            // A font collection: take the first face's table directory.
+            if (font[0] == (byte)'t' && font[1] == (byte)'t' && font[2] == (byte)'c' && font[3] == (byte)'f')
+                directory = (int)ReadUInt32(font, 12);
+
+            var tables = ReadUInt16(font, directory + 4);
+            for (var i = 0; i < tables; i++)
+            {
+                var record = directory + 12 + (i * 16);
+                if (font[record] != (byte)'h' || font[record + 1] != (byte)'e'
+                    || font[record + 2] != (byte)'a' || font[record + 3] != (byte)'d')
+                    continue;
+
+                return ReadUInt16(font, (int)ReadUInt32(font, record + 8) + 18);
+            }
+        }
+        catch (Exception ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not read the font's em size: {ex}");
+        }
+
+        return 0;
+    }
+
+    private static int ReadUInt16(byte[] data, int offset) => (data[offset] << 8) | data[offset + 1];
+
+    private static uint ReadUInt32(byte[] data, int offset) =>
+        ((uint)data[offset] << 24) | ((uint)data[offset + 1] << 16)
+        | ((uint)data[offset + 2] << 8) | data[offset + 3];
+
+    /// <summary>
+    /// Says so once when the game has kerning switched off, since the pairs are then read and
+    /// stored for nothing: <c>TMP_Text</c> only consults them when <c>enableKerning</c> is set,
+    /// and it takes that from the game's own TMP settings.
+    /// </summary>
+    private static void WarnIfKerningIsOff()
+    {
+        if (_kerningChecked)
+            return;
+
+        _kerningChecked = true;
+        try
+        {
+            if (!TMP_Settings.enableKerning)
+                ScriptedScreensFontsPlugin.Log?.LogInfo("Kerning is off in the game's TextMeshPro settings, so the pairs loaded here are not applied when text is drawn.");
+        }
+        catch (Exception ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogInfo($"Could not read the TextMeshPro kerning setting: {ex.Message}");
+        }
     }
 
     /// <summary>

@@ -68,6 +68,9 @@ end
   character to a font file that has it, or draw it another way. Do not reach for the game's
   symbol faces (`noto-punc` and most others): `stationeers://fonts/available` marks them as
   logging an error every frame in a label.
+- **Loaded fonts are kerned** (from the font's GPOS table), so a line of text draws slightly
+  narrower than the sum of its characters' widths. Anything measuring text by adding up glyph
+  advances will over-estimate. The `Kerning` setting turns it off.
 - **Adding a font file or toggling one needs a game restart.** Fonts are built once.
 - **Fonts can also be downloaded:** links in the `FontUrls` setting (a `.ttf`/`.otf` file, or a
   Google Fonts CSS link such as `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700`)

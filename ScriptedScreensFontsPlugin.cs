@@ -52,6 +52,15 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 "Characters to include beyond ASCII and Latin-1. The atlas is built once at load "
                 + "and cannot grow, so anything absent here will not render in a loaded font.");
 
+            FontLoader.Kerning = Config.Bind(
+                "Fonts",
+                "Kerning",
+                true,
+                "Space letter pairs as the font says they should be spaced (AV, To, Wa sit closer), "
+                + "the way a browser draws them. Text becomes slightly narrower, usually 1-4%. Off "
+                + "restores the wider, evenly spaced look. Takes effect after a restart, and only "
+                + "for fonts loaded from files.").Value;
+
             var modDirectory = System.IO.Path.GetDirectoryName(typeof(ScriptedScreensFontsPlugin).Assembly.Location);
             if (!string.IsNullOrEmpty(modDirectory))
                 FontLoader.Configure(modDirectory, extraCharacters.Value, Config);

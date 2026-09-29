@@ -4,6 +4,11 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- Loaded fonts are kerned: each face's letter-pair spacing is read from the font's OpenType
+  GPOS table, so `AV`, `To` and `LT` tuck together the way they do in a browser instead of
+  sitting evenly spaced. The `Kerning` setting turns it off. It applies wherever the font is
+  used, including a ScriptedScreens Vector `T` label. TextMeshPro only honours the pairs when
+  kerning is on in the game's own TMP settings; the log says so once if it is not.
 - Fonts can be downloaded: the `FontUrls` setting takes links to `.ttf`/`.otf` files or Google
   Fonts CSS links. Each is fetched once into `fonts/downloaded` in the save folder, named from
   the font's own metadata, and loads from disk afterwards.
