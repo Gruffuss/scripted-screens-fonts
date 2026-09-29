@@ -70,7 +70,9 @@ end
   logging an error every frame in a label.
 - **Loaded fonts are kerned** (from the font's GPOS table), so a line of text draws slightly
   narrower than the sum of its characters' widths. Anything measuring text by adding up glyph
-  advances will over-estimate. The `Kerning` setting turns it off.
+  advances will over-estimate. The `Kerning` setting turns it off. Most of the game's own faces
+  kern too, from pairs baked into them when they were made; `stationeers://fonts/available`
+  gives the pair count for every font, so a face that does not kern is visible there.
 - **Adding a font file or toggling one needs a game restart.** Fonts are built once.
 - **Fonts can also be downloaded:** links in the `FontUrls` setting (a `.ttf`/`.otf` file, or a
   Google Fonts CSS link such as `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700`)

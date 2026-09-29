@@ -91,9 +91,9 @@ internal static class FontRegistry
                 MaterialReferenceManager.AddFontAsset(font);
                 added++;
                 ScriptedScreensFontsPlugin.Log?.LogInfo($"Font available: <font=\"{name}\">");
-                Record(name, WarnIfUiIncompatible(font, name)
+                Record(name, (WarnIfUiIncompatible(font, name)
                     ? "game font; its material lacks _CullMode, so a ScriptedScreens label using it logs a Unity error every frame -- avoid"
-                    : "game font");
+                    : "game font") + KerningNote(font));
             }
             catch (Exception ex)
             {
@@ -103,6 +103,26 @@ internal static class FontRegistry
         }
 
         return added;
+    }
+
+    /// <summary>
+    /// Says whether a game font kerns. Several of them do: TMP bakes pair records into an asset
+    /// when it is created in the editor, and the game's own faces were made that way, so a label
+    /// on the default font is kerned without this mod doing anything. Worth recording, because
+    /// otherwise the only way to find out is a test page.
+    /// </summary>
+    private static string KerningNote(TMP_FontAsset font)
+    {
+        try
+        {
+            var pairs = font.fontFeatureTable?.glyphPairAdjustmentRecords?.Count ?? 0;
+            return pairs > 0 ? $", {pairs} kerning pairs of its own" : ", no kerning pairs";
+        }
+        catch (Exception)
+        {
+            // A font asset from a bundle that is not fully loaded; the count is not worth a throw.
+            return string.Empty;
+        }
     }
 
     /// <summary>

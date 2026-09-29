@@ -9,6 +9,9 @@ Newest first. The workshop page carries only the latest releases; this file has 
   sitting evenly spaced. The `Kerning` setting turns it off. It applies wherever the font is
   used, including a ScriptedScreens Vector `T` label. TextMeshPro only honours the pairs when
   kerning is on in the game's own TMP settings; the log says so once if it is not.
+- `stationeers://fonts/available` says whether each font kerns, and with how many pairs. The
+  game's own faces carry pair records baked in when they were made, so text on the default font
+  is already kerned; the list now shows that instead of it taking a test page to find out.
 - Fonts can be downloaded: the `FontUrls` setting takes links to `.ttf`/`.otf` files or Google
   Fonts CSS links. Each is fetched once into `fonts/downloaded` in the save folder, named from
   the font's own metadata, and loads from disk afterwards.
