@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -85,6 +86,11 @@ internal static class FontsDocsTool
             count++;
         }
 
+        Add("charset", "Characters a font can draw",
+            "The exact set of codepoints every font is built with, and which of them each "
+            + "loaded face turns out not to have. Read this to know whether a character draws.",
+            Charset);
+
         const string AvailableName = "Fonts available now";
         const string AvailableDescription = "Every font name <font=\"...\"> resolves in this game right now, with where it came from. Game fonts keep arriving for the first minutes of a session.";
         Add("available", AvailableName, AvailableDescription, Available);
@@ -133,6 +139,65 @@ internal static class FontsDocsTool
     }
 
     /// <summary>The live font list, read on every request.</summary>
+    /// <summary>
+    /// The requested set, exactly, plus each face's gaps. Written for a tool that wants to warn
+    /// about a character before it is drawn, so it states ranges rather than prose.
+    /// </summary>
+    private static string Charset()
+    {
+        var text = new StringBuilder("# Characters a font can draw\n\n");
+        text.Append("Every font is built from the same **requested set** of 272 codepoints:\n\n");
+        text.Append("- `U+0020`..`U+007E` printable ASCII (95)\n");
+        text.Append("- `U+00A0`..`U+00FF` Latin-1 supplement (96)\n");
+        text.Append("- the 81 named extras listed below\n");
+        text.Append("- plus every character in the `ExtraCharacters` setting, which the player\n");
+        text.Append("  edits, so a session may build more than the 272.\n\n");
+        text.Append("A character outside that set never draws, in any font. One inside it draws\n");
+        text.Append("only if the face has the glyph, and that varies: loaded faces have ranged from\n");
+        text.Append("212 to 263 of the 272. Check the face you are using below rather than\n");
+        text.Append("assuming the set.\n\n## The 81 extras\n\n```\n");
+
+        AppendCodepoints(text, FontLoader.DefaultExtraCodepoints);
+
+        text.Append("```\n\n## What each loaded face is missing\n\n");
+        var coverage = FontRegistry.CoverageSnapshot();
+        if (coverage.Count == 0)
+        {
+            text.Append("No font files are loaded yet.\n");
+            return text.ToString();
+        }
+
+        foreach (var face in coverage)
+        {
+            text.Append("### ").Append(face.Key).Append("\n\n");
+            if (face.Value.Length == 0)
+            {
+                text.Append("Draws every requested character.\n\n");
+                continue;
+            }
+
+            text.Append(face.Value.Length).Append(" requested characters do not draw:\n\n```\n");
+            AppendCodepoints(text, face.Value);
+            text.Append("```\n\n");
+        }
+
+        return text.ToString();
+    }
+
+    private static void AppendCodepoints(StringBuilder text, IEnumerable<uint> codepoints)
+    {
+        var column = 0;
+        foreach (var codepoint in codepoints)
+        {
+            text.Append("U+").Append(codepoint.ToString("X4", CultureInfo.InvariantCulture)).Append(' ');
+            if (++column % 8 == 0)
+                text.Append('\n');
+        }
+
+        if (column % 8 != 0)
+            text.Append('\n');
+    }
+
     private static string Available()
     {
         var fonts = FontRegistry.Snapshot();

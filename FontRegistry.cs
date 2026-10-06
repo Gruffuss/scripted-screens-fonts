@@ -33,6 +33,26 @@ internal static class FontRegistry
     private static readonly List<KeyValuePair<string, string>> Catalogue = new();
 
     /// <summary>Notes a registered font and where it came from.</summary>
+    /// <summary>
+    /// Requested codepoints a face does not draw, by font name. Guarded by the same lock as
+    /// <see cref="Catalogue"/>, for the same reason: the MCP server reads it off its own thread.
+    /// </summary>
+    private static readonly List<KeyValuePair<string, uint[]>> Coverage = new();
+
+    /// <summary>Records the requested characters <paramref name="name"/> turned out not to have.</summary>
+    internal static void RecordCoverage(string name, uint[] missing)
+    {
+        lock (Seen)
+            Coverage.Add(new KeyValuePair<string, uint[]>(name, missing));
+    }
+
+    /// <summary>A copy of the per-face gaps, safe to read off any thread.</summary>
+    internal static List<KeyValuePair<string, uint[]>> CoverageSnapshot()
+    {
+        lock (Seen)
+            return new List<KeyValuePair<string, uint[]>>(Coverage);
+    }
+
     internal static void Record(string name, string note)
     {
         lock (Seen)

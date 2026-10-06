@@ -59,6 +59,9 @@ internal static class FontLoader
     /// </remarks>
     private static readonly uint[] DefaultExtras = BuildDefaultExtras();
 
+    /// <summary>The baked extras, for the charset documentation resource.</summary>
+    internal static IEnumerable<uint> DefaultExtraCodepoints => DefaultExtras;
+
     private static uint[] BuildDefaultExtras()
     {
         var extras = new List<uint>
@@ -574,6 +577,22 @@ internal static class FontLoader
             if (byIndex.TryGetValue(pair.Value, out var glyph))
                 characterTable.Add(new TMP_Character(pair.Key, asset, glyph));
         }
+
+        // What was asked for but is not in this face, either because the font has no such glyph
+        // or because the atlas filled. Published per face: the requested set is the same for
+        // every font, but what each one draws is not -- the spread is 212 to 263 of 272.
+        var drawn = new HashSet<uint>();
+        foreach (var character in characterTable)
+            drawn.Add(character.unicode);
+
+        var missing = new List<uint>();
+        foreach (var unicode in charset)
+        {
+            if (!drawn.Contains(unicode))
+                missing.Add(unicode);
+        }
+
+        FontRegistry.RecordCoverage(fontName, missing.ToArray());
 
         texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
         asset.ReadFontAssetDefinition();

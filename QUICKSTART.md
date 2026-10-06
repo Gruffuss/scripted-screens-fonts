@@ -59,6 +59,8 @@ end
 - **A file's font name is not its file name.** `Barlow-Regular.ttf` is `Barlow`;
   `BarlowCondensed-SemiBold.ttf` is `Barlow Condensed SemiBold`. The name is the font's own
   family, plus its style when that is not Regular.
+- **`stationeers://fonts/charset` is the exact answer** to "will this character draw": the full
+  requested set, and the codepoints each loaded face is missing. Prefer it to the summary below.
 - **Each loaded font has a fixed character set:** printable ASCII, Latin-1, and common UI
   symbols (dashes, curly quotes, `− ≈ ≠ ≤ ≥ ∞ √ Δ π Ω`, arrows, shapes, block bars, box
   drawing), plus anything in the `ExtraCharacters` setting. A character outside that set, or

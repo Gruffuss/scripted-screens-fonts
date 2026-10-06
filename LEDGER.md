@@ -12,11 +12,18 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 Not started, not in flight. Nothing in this mod is half-finished.
 
-- [ ] How long game fonts really keep arriving is still unmeasured. The arrival-time log line now
-      exists to settle it; a long session is all that is needed. Observed so far: 54 fonts at
-      18 s, 8 more at 41 s, 8 more at 82 s.
+- [ ] How long game fonts keep arriving is now measured for an **idle** session and nothing else:
+      54 at 18 s, 8 at 41 s, 8 at 82 s, then nothing for the remaining four minutes the game was
+      up. The case that would take longer is the one that cannot be measured by standing still --
+      signage faces load with the prefabs that use them, so they appear when a player walks
+      somewhere new. Needs a session where someone actually moves around. The "up to an hour"
+      figure the comments used to carry was never measured and has been removed.
 
 ## Done
+
+- [x] `stationeers://fonts/charset` publishes the exact character set and each face's gaps, so a
+      page builder can warn precisely rather than from prose. Seen in game: 45 faces listed,
+      Barlow's 60 gaps being exactly the arrows, shapes, block elements and box drawing.
 
 - [x] Variable fonts build every named instance as its own face, named from its own metadata and
       weight-linked with its siblings. Seen in game: one file gave six faces, five of which fell

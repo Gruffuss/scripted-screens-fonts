@@ -4,6 +4,11 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- New `stationeers://fonts/charset` documentation resource: the exact 272 codepoints every font
+  is built from, and, per loaded face, exactly which of them it turns out not to have. A tool can
+  now warn that a character will not draw instead of guessing from a prose description -- the
+  spread is real, with faces ranging from 212 to 263 of the 272.
+
 - Variable fonts work: a file with named instances builds every one of them as its own face, so
   a single variable `.ttf` gives `<font="Cascadia Code Light">` through `<font="Cascadia Code
   Bold">` and links their weights like any other family. Each instance carries its own atlas, so
