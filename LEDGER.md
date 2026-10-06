@@ -2,7 +2,15 @@
 
 Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done.
 
-## Open
+## Waiting on a game start
+
+- [x] Catalogue entry wording reordered so the `_CullMode` warning comes last (`4cd2f89`), built
+      and deployed. Not yet loaded: it takes effect at the next game start, like any build here.
+      Nothing to do, and nothing depends on it -- it changes one documentation string.
+
+## Backlog
+
+Not started, not in flight. Nothing in this mod is half-finished.
 
 - [ ] `FontUrls` downloads and `FontApi.RequestFont` have never been exercised in game: the
       setting is empty, so no launch has fetched anything. Check for `Downloaded ...` in the log,
@@ -12,7 +20,6 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 - [ ] Variable fonts load only their default instance; named instances through the high bits of
       `faceIndex` are untested.
 - [ ] Heartbeat stop condition from an expected font set (game fonts currently register forever).
-- [ ] Entry-wording reorder is built and deployed but not yet loaded by a running game.
 
 ## Done
 
