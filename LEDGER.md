@@ -84,9 +84,10 @@ Empty. Nothing in this mod is started-and-unfinished.
   that is not ours: the caller would lay its text out with our glyph indices and metrics. The
   prefix therefore redirects **only when the `Font` argument is null**, which our own assets
   always pass because `FontLoader` never sets `sourceFontFile`. Anything carrying a real `Font`
-  is somebody else's and reaches the untouched method. Added after the owner saw the settings
-  panel draw about fifty rows with a single character each -- never reproduced, and no error was
-  logged, so this is hardening against the mechanism rather than a diagnosed fix.
+  is somebody else's and reaches the untouched method. **Kept on its own merits** (owner's call,
+  2026-10-06), not as a fix for anything: it was written in response to a display fault that had
+  already resolved, was never reproduced and logged no error. Narrowing a global patch is right
+  regardless; the reason it was written that day was not.
 
 - **The static fallback exists for a TextMeshPro change, not a Harmony failure.** Harmony cannot
   be unavailable: BepInEx is Harmony, so a plugin that is running at all has it. What can fail is
