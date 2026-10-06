@@ -10,24 +10,20 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Backlog
 
-- [ ] `RequestFontWithReason` is built and deployed but **not seen in game**. How each token can
-      actually be provoked, since they are not equally reachable:
-      - `download-failed` -- an allowed host with a path that 404s. Genuine.
-      - `disabled` -- switch a downloaded file off in the config, then request its link. Genuine.
-      - `load-failed` -- an allowed host serving a file that is not a font. Genuine.
-      - `face-limit` -- needs 48 page faces in one session, so it is reachable only by lowering
-        the cap in a temporary build: that checks the arithmetic, not the real limit.
-      - `loader-unavailable` -- **cannot occur naturally**: it needs the shader to stay missing
-        for 60 s, which does not happen. Only a temporary build holding that condition can
-        exercise it. Say so when reporting it, or the claim is stronger than the evidence.
-      Blocked only on a free game: the vector session has it. Nothing to design, just run it.
-- [ ] The atlas texture is applied with `makeNoLongerReadable: false`, so every face keeps a CPU
-      copy as well as the GPU one -- about 90 MB across 45 faces instead of 45 MB. Nothing is
-      added after load, so the readable copy looks like dead weight. **Untested**: the material
-      or `ReadFontAssetDefinition` may need CPU access. One-word change, worth measuring.
-
+- [ ] Two of the five failure tokens remain unprovoked, and neither is reachable by ordinary
+      means: `face-limit` needs 48 page faces in one session (only by lowering the cap in a
+      temporary build) and `loader-unavailable` cannot occur naturally at all. A third,
+      `load-failed`, looks **unreachable by URL**: the downloader validates a file with
+      `LoadFontFace` before it ever becomes a path, so a non-font never reaches the loading step
+      and reports `download-failed` instead. It would need an already-cached file to be corrupt.
 
 ## Done
+
+- [x] `RequestFontWithReason` seen on a console. `download-failed` confirmed by two routes (a 404
+      on an allowed host, and an allowed host serving a non-font), `disabled` confirmed by
+      switching a cached font off in the config and asking for its link, and a disallowed host
+      confirmed to return false **with no callback at all**. The `disabled` run also verified the
+      config switch itself: the font did not register that session.
 
 - [x] **Complete character coverage.** Faces are built as TMP dynamic assets with an empty atlas
       and grow on demand, so every character a font file holds can be drawn. Seen in game:
