@@ -4,6 +4,10 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- `FontApi.RequestFont` now always calls back once it has accepted a link. It waited without a
+  limit for the font loader to be ready, so a caller could have been left with a callback that
+  never arrived at all; that wait is now bounded and reports nothing loaded instead of hanging.
+
 - New `stationeers://fonts/charset` documentation resource: the exact 272 codepoints every font
   is built from, and, per loaded face, exactly which of them it turns out not to have. A tool can
   now warn that a character will not draw instead of guessing from a prose description -- the

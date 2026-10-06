@@ -54,6 +54,12 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Do not re-derive
 
+- **`FontApi.RequestFont`'s callback is guaranteed once the call returns true**, on the main
+  thread, with an empty array meaning nothing loaded. The delivery sits in a `finally`, so every
+  failure path reaches it. Do not add a `RequestFont` *overload*: both consumers resolve it with
+  `GetMethod("RequestFont")` by name alone, which throws `AmbiguousMatchException` as soon as a
+  second one exists. A richer call needs a different name.
+
 - **The 80 s figure is for a session where nobody moves.** Signage faces load with the prefabs
   that use them, so a player walking somewhere new can still bring one in much later. That case
   needs a normal play session to measure and has never been observed, only reasoned about; the

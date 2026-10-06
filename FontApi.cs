@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using UnityEngine;
 using BepInEx.Configuration;
 
 namespace ScriptedScreensFonts;
@@ -35,6 +36,9 @@ namespace ScriptedScreensFonts;
 public static class FontApi
 {
     private const int MaxPageFaces = 48;
+
+    /// <summary>How long a request waits for the font loader before reporting nothing.</summary>
+    private const float StartupWaitSeconds = 60f;
 
     private static readonly char[] HostSeparators = { ',', ' ', ';', '\n', '\r', '\t' };
     private static readonly Dictionary<string, Pending> Requests = new(StringComparer.Ordinal);
@@ -127,9 +131,22 @@ public static class FontApi
                 yield return FontDownloader.Fetch(url, folder, Allowed, paths);
             }
 
-            // The launch's own fonts first; a cached file may be among them already.
+            // The launch's own fonts first; a cached file may be among them already. Bounded,
+            // because this waits on conditions a request cannot influence: if TMP's shader never
+            // materialises, an unbounded wait would leave the caller's callback never arriving
+            // at all, and a page waiting for ever is worse than one told it got nothing.
+            var deadline = Time.realtimeSinceStartup + StartupWaitSeconds;
             while (FontLoader.StartupPending || !FontLoader.ShaderReady)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    ScriptedScreensFontsPlugin.Log?.LogWarning(
+                        $"Font request {url}: the font loader was still not ready after {StartupWaitSeconds:0} s; giving up on this request.");
+                    yield break;
+                }
+
                 yield return null;
+            }
 
             foreach (var path in paths)
             {
