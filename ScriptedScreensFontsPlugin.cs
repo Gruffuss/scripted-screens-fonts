@@ -45,16 +45,6 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
 
             // Config must bind into ModBehaviour.Config: that is the instance LaunchPad hands
             // to its settings UI. A private ConfigFile writes a valid .cfg nobody ever sees.
-            var extraCharacters = Config.Bind(
-                "Fonts",
-                "ExtraCharacters",
-                "",
-                // No longer the gate it was: a font's characters are built as they are drawn, so
-                // this only matters on the fallback path where that could not be enabled.
-                "Rarely needed. Every character a font contains is now built when it is first "
-                + "drawn, so nothing has to be listed here. It is only used if the log says "
-                + "on-demand characters could not be enabled.");
-
             FontLoader.Kerning = Config.Bind(
                 "Fonts",
                 "Kerning",
@@ -66,7 +56,7 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
 
             var modDirectory = System.IO.Path.GetDirectoryName(typeof(ScriptedScreensFontsPlugin).Assembly.Location);
             if (!string.IsNullOrEmpty(modDirectory))
-                FontLoader.Configure(modDirectory, extraCharacters.Value, Config);
+                FontLoader.Configure(modDirectory, Config);
 
             var fontUrls = Config.Bind(
                 "Fonts",

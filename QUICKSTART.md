@@ -61,14 +61,10 @@ end
   family, plus its style when that is not Regular.
 - **`stationeers://fonts/charset` is the exact answer** to "will this character draw": the full
   requested set, and the codepoints each loaded face is missing. Prefer it to the summary below.
-- **A font file's characters are all available**, built the first time each one is drawn, so
-  there is no set to stay inside any more. What follows describes the old fixed set and is kept
-  only for the case where on-demand growth could not be enabled; the log says which applies.
-- **Each loaded font has a fixed character set:** printable ASCII, Latin-1, and common UI
-  symbols (dashes, curly quotes, `− ≈ ≠ ≤ ≥ ∞ √ Δ π Ω`, arrows, shapes, block bars, box
-  drawing), plus anything in the `ExtraCharacters` setting. A character outside that set, or
-  one the font file does not contain, does not draw. Barlow has no arrows, shapes or box
-  drawing. Subscript digits are not in the set: write `CO2`.
+- **Every character a font file contains can be drawn**, built the first time it is drawn, so
+  there is no character set to stay inside. What a face does *not* contain still matters: Barlow
+  has no arrows, shapes or box drawing at all, and subscript digits are rare, so write `CO2`.
+  Check `stationeers://fonts/charset` for the face rather than guessing.
 - **A glyph the font really lacks is substituted by TextMeshPro**, not by this mod. Measured
   2026-10-06: Barlow has no arrow, filled circle or box-drawing glyph, and a label asking for
   them drew them anyway, out of TMP's own global fallback chain. So the character appears, in a
@@ -119,6 +115,6 @@ end
 
 - [ ] every name copied from `stationeers://fonts/available`, case included
 - [ ] tags inside `props.text`, nothing in `style` selects a font
-- [ ] characters limited to the set above, or listed in `ExtraCharacters`
+- [ ] every character checked against the face in `stationeers://fonts/charset`
 - [ ] no flagged game font in a label
 - [ ] checked with `capture_scripted_screen`

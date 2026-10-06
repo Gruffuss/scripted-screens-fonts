@@ -14,6 +14,10 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Done
 
+- [x] Removed the `ExtraCharacters` setting. It existed to widen a fixed character set that no
+      longer exists; every character is built on demand. The fallback path keeps its own built-in
+      set and needs no configuring.
+
 - [x] Settings UI tidied: the per-file description cut to one line (it was repeated under all
       three dozen files), the `ExtraCharacters` text corrected since it no longer gates anything,
       and the file sections renamed so the settings sort first. **Not seen** -- the UI cannot be

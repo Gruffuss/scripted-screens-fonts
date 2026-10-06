@@ -146,16 +146,17 @@ internal static class FontsDocsTool
     private static string Charset()
     {
         var text = new StringBuilder("# Characters a font can draw\n\n");
-        text.Append("Every font is built from the same **requested set** of 272 codepoints:\n\n");
-        text.Append("- `U+0020`..`U+007E` printable ASCII (95)\n");
-        text.Append("- `U+00A0`..`U+00FF` Latin-1 supplement (96)\n");
-        text.Append("- the 81 named extras listed below\n");
-        text.Append("- plus every character in the `ExtraCharacters` setting, which the player\n");
-        text.Append("  edits, so a session may build more than the 272.\n\n");
-        text.Append("A character outside that set never draws, in any font. One inside it draws\n");
-        text.Append("only if the face has the glyph, and that varies: loaded faces have ranged from\n");
-        text.Append("212 to 263 of the 272. Check the face you are using below rather than\n");
-        text.Append("assuming the set.\n\n## The 81 extras\n\n```\n");
+        text.Append("**Every character a font file contains can be drawn.** A glyph is built\n");
+        text.Append("the first time something draws it, so there is no set to stay inside.\n\n");
+        text.Append("What follows is a **common set** of 272 codepoints -- printable ASCII\n");
+        text.Append("(`U+0020`..`U+007E`), the Latin-1 supplement (`U+00A0`..`U+00FF`) and the\n");
+        text.Append("81 extras below -- used only as a yardstick, because it is the text a\n");
+        text.Append("console page usually needs. For each loaded face this says which of those\n");
+        text.Append("it does **not** have, so you can tell in advance that a line will not draw\n");
+        text.Append("as written. A face may contain thousands of characters beyond it.\n\n");
+        text.Append("A character the face genuinely lacks is substituted by TextMeshPro from\n");
+        text.Append("its own fallback, so it appears in another face rather than not at all.\n\n");
+        text.Append("## The 81 extras\n\n```\n");
 
         AppendCodepoints(text, FontLoader.DefaultExtraCodepoints);
 

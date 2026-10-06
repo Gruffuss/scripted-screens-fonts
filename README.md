@@ -169,10 +169,6 @@ symbol faces are no help: most of them log an error every frame in a label (see 
 `stationeers://fonts/charset` over the MCP server answers this exactly — the codepoints each
 loaded face does and does not have, rather than a description you have to interpret.
 
-**`ExtraCharacters`** in `BepInEx/config/gruffuss.stationeers.scriptedscreens.fonts.cfg` is now
-only needed for the rare case where on-demand growth could not be enabled; the log says which
-applies.
-
 ## Limits
 
 - **A face costs nothing until something draws it.** Its atlas starts empty and grows to

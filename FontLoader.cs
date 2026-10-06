@@ -54,7 +54,7 @@ internal static class FontLoader
     /// returns 0 and the character is skipped — so an absent glyph costs nothing. Barlow,
     /// for instance, has the minus sign and both dashes but no arrows at all. Baking a
     /// broad list therefore cannot make a font render something it does not contain; it
-    /// only spares the author from listing symbols in <c>ExtraCharacters</c> for the fonts
+    /// only spares the author from hunting for symbols in the fonts
     /// that do.
     /// </remarks>
     private static readonly uint[] DefaultExtras = BuildDefaultExtras();
@@ -149,7 +149,7 @@ internal static class FontLoader
 
         try
         {
-            var name = Load(path, _charset ??= BuildCharacterSet(_extraCharacters));
+            var name = Load(path, _charset ??= BuildCharacterSet());
 
             // A font requested at runtime may be a family's missing Bold, so re-link.
             LinkWeights();
@@ -164,7 +164,6 @@ internal static class FontLoader
 
     internal static bool ShaderReady => ShaderUtilities.ShaderRef_MobileSDF != null;
     private static List<string>? _files;
-    private static string _extraCharacters = string.Empty;
 
     /// <summary>
     /// Finds the font files and binds one on/off toggle per file, to be loaded later by
@@ -176,9 +175,8 @@ internal static class FontLoader
     /// guaranteed to show. A disabled file is never built,
     /// so it costs no atlas memory; toggling needs a restart like adding a file does.
     /// </remarks>
-    internal static void Configure(string modDirectory, string extraCharacters, ConfigFile config)
+    internal static void Configure(string modDirectory, ConfigFile config)
     {
-        _extraCharacters = extraCharacters ?? string.Empty;
         _files = new List<string>();
 
         // The player's folder first, so a player's font can take over a bundled font's name.
@@ -186,12 +184,12 @@ internal static class FontLoader
         // fonts dropped in there would be lost with it.
         var userFolder = UserFontsFolder();
         if (userFolder != null)
-            Scan(userFolder, "Your fonts: ", config, create: true);
+            Scan(userFolder, "Your fonts (restart to apply): ", config, create: true);
 
         // "Included fonts", not "Font files": LaunchPad sorts the settings sections by name, and
         // "Font files: X" sorts before "Fonts" because the space beats the s -- which buried the
         // actual settings in the middle of three dozen file switches.
-        Scan(Path.Combine(modDirectory, FontsFolder), "Included fonts: ", config, create: false);
+        Scan(Path.Combine(modDirectory, FontsFolder), "Included fonts (restart to apply): ", config, create: false);
     }
 
     /// <summary>
@@ -260,9 +258,11 @@ internal static class FontLoader
                     ConfigSection(sectionPrefix, relative),
                     ConfigName(Path.GetFileName(relative)),
                     true,
-                    // One line, because the settings UI repeats it under every file and there is
-                    // one of these per face: thirty-six copies of a paragraph is the whole screen.
-                    "Load this file. Restart to apply.");
+                    // No description at all. The settings UI prints one under every entry, and
+                    // there is an entry per face: even a single short line became three dozen
+                    // copies filling the screen. What a reader needs to know is general, so it
+                    // lives in the section header, which is drawn once.
+                    string.Empty);
 
                 if (enabled.Value)
                 {
@@ -336,7 +336,7 @@ internal static class FontLoader
         var files = _files;
         _files = null;
 
-        var charset = _charset ??= BuildCharacterSet(_extraCharacters);
+        var charset = _charset ??= BuildCharacterSet();
         foreach (var file in files)
         {
             try
@@ -356,7 +356,7 @@ internal static class FontLoader
     /// Printable ASCII, the Latin-1 supplement (accented European text plus degree,
     /// plus-minus, micro and superscripts), and <see cref="DefaultExtras"/>.
     /// </summary>
-    private static List<uint> BuildCharacterSet(string extraCharacters)
+    private static List<uint> BuildCharacterSet()
     {
         var set = new HashSet<uint>();
         var ordered = new List<uint>();
@@ -376,11 +376,6 @@ internal static class FontLoader
         foreach (var c in DefaultExtras)
             Add(c);
 
-        foreach (var c in extraCharacters ?? string.Empty)
-        {
-            if (!char.IsControl(c))
-                Add(c);
-        }
 
         return ordered;
     }
