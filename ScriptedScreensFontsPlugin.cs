@@ -49,8 +49,11 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 "Fonts",
                 "ExtraCharacters",
                 "",
-                "Characters to include beyond ASCII and Latin-1. The atlas is built once at load "
-                + "and cannot grow, so anything absent here will not render in a loaded font.");
+                // No longer the gate it was: a font's characters are built as they are drawn, so
+                // this only matters on the fallback path where that could not be enabled.
+                "Rarely needed. Every character a font contains is now built when it is first "
+                + "drawn, so nothing has to be listed here. It is only used if the log says "
+                + "on-demand characters could not be enabled.");
 
             FontLoader.Kerning = Config.Bind(
                 "Fonts",

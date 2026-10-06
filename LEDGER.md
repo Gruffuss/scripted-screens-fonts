@@ -14,6 +14,11 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Done
 
+- [x] Settings UI tidied: the per-file description cut to one line (it was repeated under all
+      three dozen files), the `ExtraCharacters` text corrected since it no longer gates anything,
+      and the file sections renamed so the settings sort first. **Not seen** -- the UI cannot be
+      captured from here; next launch shows it.
+
 - [x] Released as 0.3.0: README, Steam description and version brought up to date with on-demand
       characters, real weights, kerning, downloads and variable fonts. Merged to `main`.
 
@@ -70,6 +75,12 @@ Empty. Nothing in this mod is started-and-unfinished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **LaunchPad sorts settings sections alphabetically** (`a.Category.CompareTo(b.Category)`) and
+  renders each with `ImGuiTreeNodeFlags.DefaultOpen` hardcoded. So binding order does not affect
+  display order, and **a section cannot be made to start collapsed** from a mod. Ordering is
+  controlled only by choosing section names: `"Font files: X"` sorted before `"Fonts"` because
+  the space beats the `s`.
 
 - **A page font request has exactly three outcomes**, measured on a console, not five: refused
   (returns false, no callback at all), `download-failed`, or `disabled`. Build reports on three.

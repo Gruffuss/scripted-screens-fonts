@@ -188,7 +188,10 @@ internal static class FontLoader
         if (userFolder != null)
             Scan(userFolder, "Your fonts: ", config, create: true);
 
-        Scan(Path.Combine(modDirectory, FontsFolder), "Font files: ", config, create: false);
+        // "Included fonts", not "Font files": LaunchPad sorts the settings sections by name, and
+        // "Font files: X" sorts before "Fonts" because the space beats the s -- which buried the
+        // actual settings in the middle of three dozen file switches.
+        Scan(Path.Combine(modDirectory, FontsFolder), "Included fonts: ", config, create: false);
     }
 
     /// <summary>
@@ -257,7 +260,9 @@ internal static class FontLoader
                     ConfigSection(sectionPrefix, relative),
                     ConfigName(Path.GetFileName(relative)),
                     true,
-                    "Load this font file. Takes effect after a restart; a disabled file costs no memory.");
+                    // One line, because the settings UI repeats it under every file and there is
+                    // one of these per face: thirty-six copies of a paragraph is the whole screen.
+                    "Load this file. Restart to apply.");
 
                 if (enabled.Value)
                 {
