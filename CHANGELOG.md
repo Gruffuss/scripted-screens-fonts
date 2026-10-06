@@ -2,7 +2,7 @@
 
 Newest first. The workshop page carries only the latest releases; this file has all of them.
 
-## Unreleased
+## 0.3.0
 
 - **A font file's whole character set is now usable.** Each face starts with an empty atlas and
   builds a glyph the first time something draws it, so the 272-codepoint budget is gone: Barlow

@@ -16,8 +16,13 @@ It does two independent things:
    font the game does not ship.
 
 No game files are modified and ScriptedScreens is not patched. There is no Lua API — the mod
-mutates global TMP state at load, so the only thing that changes is that `<font="X">`
-resolves names it previously rejected.
+mutates global TMP state at load, so the main thing that changes is that `<font="X">` resolves
+names it previously rejected.
+
+It does patch TextMeshPro, in one narrow place: two Harmony prefixes let a font built from a
+file rasterise a glyph on demand, which TMP otherwise only does for fonts imported in the
+editor. The engine prefix is inert unless one of this mod's own faces is growing, so the game's
+fonts take the untouched path.
 
 ## Using a font
 
@@ -35,8 +40,11 @@ ui:element({
 ```
 
 ScriptedScreens enables rich text on every label unless the string contains `<noparse>`, so
-nothing needs switching on. The other TMP tags (`<b>`, `<i>`, `<size>`, `<color>`,
-`<cspace>`, `<font-weight>`) work alongside it.
+nothing needs switching on. The other TMP tags (`<size>`, `<color>`, `<cspace>`) work alongside
+it, and **`<b>`, `<i>` and `<font-weight=N>` pick the family's real faces** when it ships them —
+`<font="Barlow"><b>text</b>` draws exactly the same as `<font="Barlow Bold">text`, rather than
+TextMeshPro thickening or slanting the regular. A weight the family does not have is left
+unstyled. Text is also kerned, from the font's own pair data.
 
 **Names are case sensitive.** Take them from `BepInEx/LogOutput.log`, which lists every one
 on load:
@@ -144,34 +152,36 @@ once, on the main thread, with the names the fonts are available under.
 
 ## Character set
 
-Each font is rendered once into a fixed set:
+**Every character the font file contains is available.** Each glyph is rendered the first time
+something draws it, so there is no set to stay inside: Barlow carries 525 characters and all of
+them work, Latin Extended, Greek and currency included.
 
-- printable ASCII
-- the Latin-1 supplement (accented European text, `° ± µ ² ³ ¼ ×`)
-- 81 baked extras — dashes and curly quotes, maths (`− ≈ ≠ ≤ ≥ ∞ √ ∑ ∏ Δ ∇ π Ω`), arrows,
-  geometric shapes, `✓ ✗ ⚠`, block bars for text sparklines, and box drawing
-
-Anything else goes in **`ExtraCharacters`** in
-`BepInEx/config/gruffuss.stationeers.scriptedscreens.fonts.cfg`, or LaunchPad's settings UI.
-
-**A glyph the font does not contain is skipped.** No substitution is attempted — that would
-mean `<font="Barlow">` silently rendering some other typeface. Barlow, for example, is a text
-face: it has the punctuation and the maths but no arrows, shapes or box drawing at all. If
-you need an arrow from a font that lacks one, add a font file that has it and switch face for
-that character (`<font="Your Font">→</font>`), or draw it another way, for example with
+A glyph the font genuinely does not contain is a different matter. Barlow, for example, is a
+text face with no arrows, geometric shapes or box drawing anywhere in it. **TextMeshPro
+substitutes those from its own global fallback**, so the character appears, but in another face
+and often at another weight — which is rarely what you wanted in the middle of a line. This mod
+adds no fallback of its own and cannot switch TMP's off. If a character matters, use a font file
+that has it (`<font="Your Font">→</font>`), or draw it another way, for example with
 [ScriptedScreens Vector](https://github.com/Gruffuss/scripted-screens-vector). The game's own
-symbol faces are no help here: most of them log an error every frame in a label (see Limits).
+symbol faces are no help: most of them log an error every frame in a label (see Limits).
+
+`stationeers://fonts/charset` over the MCP server answers this exactly — the codepoints each
+loaded face does and does not have, rather than a description you have to interpret.
+
+**`ExtraCharacters`** in `BepInEx/config/gruffuss.stationeers.scriptedscreens.fonts.cfg` is now
+only needed for the rare case where on-demand growth could not be enabled; the log says which
+applies.
 
 ## Limits
 
-- **One 1024×1024 atlas per face, about 1 MB.** 36 faces is ~36 MB of texture memory. Switch
-  off the weights you do not use.
+- **A face costs nothing until something draws it.** Its atlas starts empty and grows to
+  1024×1024 on the first glyph, spilling into further textures if that fills. Loading many
+  weights you never use is therefore cheap; drawing with them is what costs.
+- **The first frame that draws a character a face has not built yet pays to rasterise it.**
+  That is once per character per face per session, and nothing on a redraw once warm.
 - **Some of the game's own fonts log a Unity error every frame when used in a label** (their
   material has no `_CullMode`). The mod names them in the log when it registers them; avoid
   them in labels.
-- **The atlas is static.** It cannot grow at runtime and cannot spill into a second texture.
-  If a font's coverage overflows it, the load logs `did not fit` and the remainder is absent;
-  the fix is a smaller sampling size.
 - **Client-side only.** Skipped entirely in batch mode, since a headless server renders
   nothing.
 - Fonts arriving from asset bundles register as they load, so the game's own list fills in

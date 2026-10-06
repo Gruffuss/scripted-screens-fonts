@@ -2,30 +2,37 @@
 <ModMetadata xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<Name>ScriptedScreens Fonts [StationeersLaunchPad]</Name>
 	<Author>Gruffuss</Author>
-	<Version>0.2.0.0</Version>
+	<Version>0.3.0.0</Version>
 	<Description>
 [h1]ScriptedScreens Fonts[/h1]
 [i]Real typefaces on ScriptedScreens consoles. Client-side only.[/i]
 
-Use the game's own fonts and any .ttf or .otf file by name in a ScriptedScreens label, with the standard tag: [code]&lt;font="Barlow Condensed"&gt;TANK 3  84%[/code]. There is nothing to call from Lua; the tag simply works.
+Use the game's own fonts and any .ttf or .otf file by name in a ScriptedScreens label, with the standard tag: [code]&lt;font="Barlow Condensed"&gt;TANK 3  84%[/code]. There is nothing to call from Lua; the tag simply works, and so do [b]&lt;b&gt;[/b], [b]&lt;i&gt;[/b] and [b]&lt;font-weight&gt;[/b], drawing the family's real faces.
 
 [h2]Highlights[/h2]
 [list]
+[*] [b]Every character a font file contains[/b], built the moment it is first drawn
+[*] [b]&lt;b&gt;, &lt;i&gt; and &lt;font-weight&gt; draw the family's real faces[/b], not a thickened or slanted fake
+[*] Text is kerned, from the font's own pair data
 [*] Ships the Barlow and Barlow Condensed families, every weight with italics
 [*] Add your own fonts: drop files into [b]Documents/My Games/Stationeers/fonts[/b]
+[*] Or download them by link, Google Fonts out of the box
+[*] A variable font gives you every one of its named instances
 [*] Names come from the font itself: Barlow-Bold.ttf is &lt;font="Barlow Bold"&gt;
 [*] An on/off switch per font file in the mod settings
-[*] Dashes, maths symbols, arrows and box drawing included when the font has them
 [/list]
 
 [h2]Getting started[/h2]
 The mod folder holds four examples that run on paste, a quick start (QUICKSTART.md), a guide (README.md) and the release history (CHANGELOG.md), also [url=https://github.com/Gruffuss/scripted-screens-fonts]on GitHub[/url]. Every available font name is written to BepInEx/LogOutput.log. With StationeersLua's MCP server on, AI editors can read the same docs and the live font list.
 
-[h2]What's new in 0.2.0[/h2]
+[h2]What's new in 0.3.0[/h2]
 [list]
-[*] Load your own .ttf and .otf files, with a switch for each
-[*] Bundled Barlow and Barlow Condensed
-[*] Examples, a quick start and docs for AI editors
+[*] [b]The whole typeface.[/b] A font is no longer cut down to a fixed set of characters: every glyph in the file is available, rendered the first time it is drawn. Barlow carries 525 characters and all of them work.
+[*] [b]Real weights and italics.[/b] &lt;font="Barlow"&gt;&lt;b&gt;text&lt;/b&gt; now draws the actual Barlow Bold, identical to naming it, instead of TextMeshPro thickening the regular. Same for &lt;i&gt; and &lt;font-weight=N&gt;.
+[*] [b]Kerning.[/b] Letter pairs are spaced as the designer drew them, so AV and To tuck together the way they do in a browser.
+[*] [b]Downloads.[/b] Put Google Fonts links in the FontUrls setting and they are fetched once and kept. Other mods can request one at runtime, limited to hosts you allow.
+[*] [b]Variable fonts[/b] expand into all of their named instances.
+[*] Uses less memory than before: a font you never draw with costs no texture at all.
 [/list]
 Full history: [url=https://github.com/Gruffuss/scripted-screens-fonts/blob/main/CHANGELOG.md]CHANGELOG.md[/url].
 

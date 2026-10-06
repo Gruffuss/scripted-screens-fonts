@@ -14,6 +14,9 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Done
 
+- [x] Released as 0.3.0: README, Steam description and version brought up to date with on-demand
+      characters, real weights, kerning, downloads and variable fonts. Merged to `main`.
+
 - [x] `RequestFontWithReason` seen on a console. `download-failed` confirmed by two routes (a 404
       on an allowed host, and an allowed host serving a non-font), `disabled` confirmed by
       switching a cached font off in the config and asking for its link, and a disallowed host
