@@ -80,6 +80,14 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Do not re-derive
 
+- **The static fallback exists for a TextMeshPro change, not a Harmony failure.** Harmony cannot
+  be unavailable: BepInEx is Harmony, so a plugin that is running at all has it. What can fail is
+  `AccessTools.Method(typeof(TMP_FontAsset), "TryAddCharacterInternal")` returning null after a
+  game update moves those internals -- which does happen, as `GetFontAssetForWeight` in this very
+  build is TMP dead code left behind by exactly that drift. Kept deliberately (owner's call,
+  2026-10-06): without it a failed patch leaves every face Dynamic with an empty atlas and no way
+  to load the face, so no glyph ever builds and every label falls through to a substitute face.
+
 - **LaunchPad sorts settings sections alphabetically** (`a.Category.CompareTo(b.Category)`) and
   renders each with `ImGuiTreeNodeFlags.DefaultOpen` hardcoded. So binding order does not affect
   display order, and **a section cannot be made to start collapsed** from a mod. Ordering is
