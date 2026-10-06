@@ -47,8 +47,9 @@ public static class FontApi
 
     private sealed class Pending
     {
-        public readonly List<Action<string[]>> Callbacks = new();
+        public readonly List<Action<string[], string>> Callbacks = new();
         public string[]? Names;
+        public string Reason = string.Empty;
     }
 
     /// <summary>The <c>PageFontHosts</c> setting, read on every request so a change applies at once.</summary>
@@ -66,6 +67,31 @@ public static class FontApi
     /// <returns>False when the link is refused — malformed, not http(s), or its host not
     /// allowed — and <paramref name="done"/> is not called. The reason is in the log.</returns>
     public static bool RequestFont(string link, Action<string[]>? done)
+    {
+        return Request(link, done == null ? null : (Action<string[], string>)((names, _) => done(names)));
+    }
+
+    /// <summary>
+    /// As <see cref="RequestFont"/>, but the callback is also told why it got nothing: an empty
+    /// string on success, else <c>download-failed</c> (the file could not be fetched),
+    /// <c>disabled</c> (the player switched that font off), <c>face-limit</c> (this session has
+    /// already built its maximum of page faces), <c>load-failed</c> (the file arrived but is not
+    /// a font this engine reads), or <c>loader-unavailable</c> (the font loader never became
+    /// ready). A caller that only draws text can ignore it; one that reports to a player on a
+    /// console cannot, because they cannot read the log.
+    /// </summary>
+    /// <remarks>
+    /// A separate name, deliberately never an overload of <c>RequestFont</c>: consumers resolve
+    /// these by reflection with <c>GetMethod("RequestFont")</c>, which throws
+    /// <c>AmbiguousMatchException</c> as soon as a second method of that name exists, breaking
+    /// every caller at once with no compile error anywhere.
+    /// </remarks>
+    public static bool RequestFontWithReason(string link, Action<string[], string>? done)
+    {
+        return Request(link, done);
+    }
+
+    private static bool Request(string link, Action<string[], string>? done)
     {
         if (!Uri.TryCreate(link, UriKind.Absolute, out var url) || (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps))
         {
@@ -91,7 +117,7 @@ public static class FontApi
         if (Requests.TryGetValue(key, out var pending))
         {
             if (pending.Names != null)
-                Deliver(done, pending.Names);
+                Deliver(done, pending.Names, pending.Reason);
             else if (done != null)
                 pending.Callbacks.Add(done);
 
@@ -123,9 +149,19 @@ public static class FontApi
     private static IEnumerator Load(Uri url, string folder, Pending pending)
     {
         var names = new List<string>();
+
+        // Why nothing was built, for the caller that has to tell a player what to do about it.
+        // Each of these needs a different action from them: a failed download is the page
+        // author's link or the network, a disabled file is the player's own switch, and the face
+        // limit is station-wide and needs room made under it.
+        List<string>? paths = null;
+        var capReached = false;
+        var someDisabled = false;
+        var ready = false;
+
         try
         {
-            if (!FontDownloader.TryCached(url, folder, out var paths))
+            if (!FontDownloader.TryCached(url, folder, out paths))
             {
                 paths = new List<string>();
                 yield return FontDownloader.Fetch(url, folder, Allowed, paths);
@@ -148,13 +184,19 @@ public static class FontApi
                 yield return null;
             }
 
+            ready = true;
+
             foreach (var path in paths)
             {
                 var name = FontLoader.LoadedName(path);
+                if (name == null && FontLoader.IsDisabled(path))
+                    someDisabled = true;
+
                 if (name == null && !FontLoader.IsDisabled(path))
                 {
                     if (_faces >= MaxPageFaces)
                     {
+                        capReached = true;
                         ScriptedScreensFontsPlugin.Log?.LogWarning($"Font request {url}: {MaxPageFaces} page font faces loaded this session, no more are built.");
                         break;
                     }
@@ -172,8 +214,9 @@ public static class FontApi
         {
             var result = names.ToArray();
             pending.Names = result;
+            pending.Reason = Reason(result, ready, paths, capReached, someDisabled);
             foreach (var callback in pending.Callbacks)
-                Deliver(callback, result);
+                Deliver(callback, result, pending.Reason);
 
             pending.Callbacks.Clear();
 
@@ -185,11 +228,33 @@ public static class FontApi
         }
     }
 
-    private static void Deliver(Action<string[]>? done, string[] names)
+    /// <summary>Names the outcome, most specific cause first.</summary>
+    private static string Reason(string[] names, bool ready, List<string>? paths, bool capReached, bool someDisabled)
+    {
+        if (names.Length > 0)
+            return string.Empty;
+
+        if (!ready)
+            return "loader-unavailable";
+
+        if (capReached)
+            return "face-limit";
+
+        if (paths == null || paths.Count == 0)
+            return "download-failed";
+
+        // Files arrived, and the only reason none of them became a face.
+        if (someDisabled)
+            return "disabled";
+
+        return "load-failed";
+    }
+
+    private static void Deliver(Action<string[], string>? done, string[] names, string reason)
     {
         try
         {
-            done?.Invoke(names);
+            done?.Invoke(names, reason);
         }
         catch (Exception ex)
         {

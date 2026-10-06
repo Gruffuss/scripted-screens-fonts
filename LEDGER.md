@@ -10,7 +10,9 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Backlog
 
-Empty. Nothing in this mod is started-and-unfinished.
+- [ ] `RequestFontWithReason` is built and deployed but **not seen in game**: the three failure
+      paths it names (`download-failed`, `disabled`, `face-limit`) have not been provoked on a
+      console. Verify at the next restart that is free to use.
 
 
 ## Done
@@ -53,6 +55,11 @@ Empty. Nothing in this mod is started-and-unfinished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **Requests are deduplicated by absolute URI.** Fifteen consoles declaring one link produce one
+  download; every caller's callback is queued on the same pending request and all of them fire.
+  A caller needs no dedup of its own. A request that produced nothing is forgotten, so a later
+  request retries rather than replaying the failure.
 
 - **`FontApi.RequestFont`'s callback is guaranteed once the call returns true**, on the main
   thread, with an empty array meaning nothing loaded. The delivery sits in a `finally`, so every
