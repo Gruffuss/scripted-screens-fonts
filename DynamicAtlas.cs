@@ -113,10 +113,19 @@ internal static class DynamicAtlas
         _growing = null;
     }
 
-    private static bool BeforeLoadFace(ref FontEngineError __result, int pointSize)
+    private static bool BeforeLoadFace(Font font, ref FontEngineError __result, int pointSize)
     {
         var source = _growing;
         if (source == null)
+            return true;
+
+        // Belt as well as braces: our own assets have no source Font, which is the whole reason
+        // this redirect exists. A call that DOES carry one is somebody else's -- the game's own
+        // dynamic fonts, or whatever draws the mod settings panel -- and must reach the real
+        // method untouched. Without this, a note left set by any path I have not thought of
+        // would feed our font's bytes to another caller, and the engine holds one face at a
+        // time: that caller would then lay its text out with our glyph indices and metrics.
+        if (font != null)
             return true;
 
         try

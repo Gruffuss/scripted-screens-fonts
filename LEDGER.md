@@ -80,6 +80,14 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Do not re-derive
 
+- **`FontEngine` holds one face globally**, so the `LoadFontFace` prefix must never answer a call
+  that is not ours: the caller would lay its text out with our glyph indices and metrics. The
+  prefix therefore redirects **only when the `Font` argument is null**, which our own assets
+  always pass because `FontLoader` never sets `sourceFontFile`. Anything carrying a real `Font`
+  is somebody else's and reaches the untouched method. Added after the owner saw the settings
+  panel draw about fifty rows with a single character each -- never reproduced, and no error was
+  logged, so this is hardening against the mechanism rather than a diagnosed fix.
+
 - **The static fallback exists for a TextMeshPro change, not a Harmony failure.** Harmony cannot
   be unavailable: BepInEx is Harmony, so a plugin that is running at all has it. What can fail is
   `AccessTools.Method(typeof(TMP_FontAsset), "TryAddCharacterInternal")` returning null after a
