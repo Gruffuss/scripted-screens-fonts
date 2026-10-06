@@ -20,6 +20,11 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       - `loader-unavailable` -- **cannot occur naturally**: it needs the shader to stay missing
         for 60 s, which does not happen. Only a temporary build holding that condition can
         exercise it. Say so when reporting it, or the claim is stronger than the evidence.
+      Blocked only on a free game: the vector session has it. Nothing to design, just run it.
+- [ ] The atlas texture is applied with `makeNoLongerReadable: false`, so every face keeps a CPU
+      copy as well as the GPU one -- about 90 MB across 45 faces instead of 45 MB. Nothing is
+      added after load, so the readable copy looks like dead weight. **Untested**: the material
+      or `ReadFontAssetDefinition` may need CPU access. One-word change, worth measuring.
 
 
 ## Done
@@ -62,6 +67,23 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **A font asset cannot grow here without a Harmony patch, and that is a choice, not a law.**
+  Both routes gate on the same call: `TryAddCharacterInternal` and the public `TryAddCharacters`
+  each begin with `FontEngine.LoadFontFace(m_SourceFontFile, ...)` and bail when it fails, and a
+  hand-built asset has no source `Font`. A prefix cannot merely pre-load the face, because the
+  original re-loads and fails; it needs a transpiler over that call, or a prefix that adds the
+  glyph itself -- which is the code this mod already runs at load time. The mod patches nothing
+  by design; do not restate that as "impossible".
+- **A Unity `Font` cannot be built from bytes or a path.** The whole surface is `Font()`,
+  `Font(string name)` (an empty font with a name, it reads no file) and
+  `CreateDynamicFontFromOSFont(name|names, size)` (an installed family). This one really is a
+  dead end, and is why faces are built from raw bytes through `FontEngine` instead.
+- **Atlas memory is width x height bytes in Alpha8, twice over** while the texture stays
+  readable: 1 MB GPU + 1 MB CPU per face at 1024, so 4096 would be ~32 MB a face, not 16.
+- **One atlas per face with everything at `atlasIndex 0` is this mod's own implementation**, not
+  a TextureMeshPro limit: `SetupNewAtlasTexture` exists and TMP spills across atlases. Lifting
+  the character budget means using it, which is work, not research.
 
 - **Requests are deduplicated by absolute URI.** Fifteen consoles declaring one link produce one
   download; every caller's callback is queued on the same pending request and all of them fire.
