@@ -12,17 +12,22 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 Not started, not in flight. Nothing in this mod is half-finished.
 
-- [ ] `FontUrls` downloads and `FontApi.RequestFont` have never been exercised in game: the
-      setting is empty, so no launch has fetched anything. Check for `Downloaded ...` in the log,
-      the files plus `sources.txt` in the download cache, and no refetch on the next launch.
-- [ ] Real weights via TMP's `fontWeightTable`: fill a Regular asset's table with its siblings so
-      `<b>`, `<i>` and `<font-weight>` pick real faces instead of synthesising them.
+- [ ] `FontApi.RequestFont` (the runtime API another mod calls) is still unexercised in game.
+      `FontUrls` downloads are now confirmed; the API shares their cache but has its own
+      allowlist and callback path.
 - [ ] Variable fonts load only their default instance; named instances through the high bits of
       `faceIndex` are untested.
 - [ ] Heartbeat stop condition from an expected font set (game fonts currently register forever).
 
 ## Done
 
+- [x] `<b>`, `<i>` and `<font-weight>` draw a family's real faces: every family links its weights
+      to each other. Seen in game -- six pairs, each string drawn once by face name and once
+      tagged on Regular, matched to identical pixel widths, a downloaded family included.
+- [x] `FontUrls` downloads confirmed in game: a Google Fonts link fetched both requested weights
+      into the cache with a `sources.txt` entry, and the next launch reused them without
+      refetching. The links are whitespace-separated -- `;` and `,` were separators and cut a
+      Google Fonts URL in half, so only its first weight arrived.
 - [x] Every font's kerning pair count is published in the MCP font list, game faces included, so
       "does this face kern" needs no test page. Confirmed in game: 62 entries, 43 from files and
       19 from the game, each with a count.
@@ -33,6 +38,11 @@ Not started, not in flight. Nothing in this mod is half-finished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **Weight slots come from `TMP_FontAssetUtilities`** (Thin 1 .. Regular 4 .. Black 9), which is
+  what actually reads `fontWeightTable`. `TMP_Text.GetFontAssetForWeight` indexes `weight / 100`
+  and is dead code in this version -- following it gives the wrong slot.
+- **A Google Fonts URL contains `;` and `,`**, so neither can separate links in a setting.
 
 - The engine's **per-lookup GPOS reader returns raw design units**, unlike the legacy kern-table
   reader which returns pixels. Values must be scaled by `SamplingPointSize / head.unitsPerEm` or
