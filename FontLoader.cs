@@ -494,19 +494,26 @@ internal static class FontLoader
         asset.name = fontName;
         asset.hideFlags = HideFlags.DontUnloadUnusedAsset;
         asset.faceInfo = faceInfo;
-        asset.atlasPopulationMode = AtlasPopulationMode.Static;
+        asset.atlasPopulationMode = DynamicAtlas.Available ? AtlasPopulationMode.Dynamic : AtlasPopulationMode.Static;
+        asset.isMultiAtlasTexturesEnabled = true;
         asset.atlasWidth = AtlasSize;
         asset.atlasHeight = AtlasSize;
         asset.atlasPadding = AtlasPadding;
         asset.atlasRenderMode = GlyphRenderMode.SDFAA;
 
-        var texture = new Texture2D(AtlasSize, AtlasSize, TextureFormat.Alpha8, mipChain: false)
+        // Empty, exactly as TMP_FontAsset.CreateFontAsset builds a dynamic asset: the first
+        // glyph anything draws resizes it to AtlasSize and rasterises into it, and a face
+        // nothing draws never costs a texture at all. The atlas must stay readable or TMP
+        // refuses to add to it.
+        var startSize = DynamicAtlas.Available ? 0 : AtlasSize;
+        var texture = new Texture2D(startSize, startSize, TextureFormat.Alpha8, mipChain: false)
         {
             name = fontName + " Atlas",
             hideFlags = HideFlags.DontUnloadUnusedAsset,
         };
 
-        FontEngine.ResetAtlasTexture(texture);
+        if (startSize > 0)
+            FontEngine.ResetAtlasTexture(texture);
         asset.atlasTextures = new[] { texture };
 
         // Mobile SDF rather than the desktop shader on purpose: it is the variant that
@@ -554,48 +561,79 @@ internal static class FontLoader
             return null;
         }
 
-        var complete = FontEngine.TryAddGlyphsToTexture(
-            glyphIndexes, AtlasPadding, GlyphPackingMode.BestShortSideFit,
-            freeRects, usedRects, GlyphRenderMode.SDFAA, texture, out var glyphs);
-
-        var glyphTable = asset.glyphTable;
-        var byIndex = new Dictionary<uint, Glyph>();
-
-        foreach (var glyph in glyphs)
-        {
-            if (glyph == null)
-                continue;
-
-            glyph.atlasIndex = 0;
-            glyphTable.Add(glyph);
-            byIndex[glyph.index] = glyph;
-        }
-
+        var complete = true;
         var characterTable = asset.characterTable;
-        foreach (var pair in wanted)
+
+        if (!DynamicAtlas.Available)
         {
-            if (byIndex.TryGetValue(pair.Value, out var glyph))
-                characterTable.Add(new TMP_Character(pair.Key, asset, glyph));
+            // No on-demand growth: rasterise the requested set now, because nothing can be
+            // added later. This is the old behaviour, kept for the case where the patch did
+            // not take.
+            complete = FontEngine.TryAddGlyphsToTexture(
+                glyphIndexes, AtlasPadding, GlyphPackingMode.BestShortSideFit,
+                freeRects, usedRects, GlyphRenderMode.SDFAA, texture, out var glyphs);
+
+            var glyphTable = asset.glyphTable;
+            var byIndex = new Dictionary<uint, Glyph>();
+
+            foreach (var glyph in glyphs)
+            {
+                if (glyph == null)
+                    continue;
+
+                glyph.atlasIndex = 0;
+                glyphTable.Add(glyph);
+                byIndex[glyph.index] = glyph;
+            }
+
+            foreach (var pair in wanted)
+            {
+                if (byIndex.TryGetValue(pair.Value, out var glyph))
+                    characterTable.Add(new TMP_Character(pair.Key, asset, glyph));
+            }
         }
 
-        // What was asked for but is not in this face, either because the font has no such glyph
-        // or because the atlas filled. Published per face: the requested set is the same for
-        // every font, but what each one draws is not -- the spread is 212 to 263 of 272.
-        var drawn = new HashSet<uint>();
-        foreach (var character in characterTable)
-            drawn.Add(character.unicode);
-
+        // What this face cannot draw. With growth available that is only what the font itself
+        // has no glyph for, since everything else arrives when it is first drawn; without it,
+        // it is also whatever did not fit the one atlas.
         var missing = new List<uint>();
-        foreach (var unicode in charset)
+        if (DynamicAtlas.Available)
         {
-            if (!drawn.Contains(unicode))
-                missing.Add(unicode);
+            var has = new HashSet<uint>();
+            foreach (var pair in wanted)
+                has.Add(pair.Key);
+
+            foreach (var unicode in charset)
+            {
+                if (!has.Contains(unicode))
+                    missing.Add(unicode);
+            }
+        }
+        else
+        {
+            var drawn = new HashSet<uint>();
+            foreach (var character in characterTable)
+                drawn.Add(character.unicode);
+
+            foreach (var unicode in charset)
+            {
+                if (!drawn.Contains(unicode))
+                    missing.Add(unicode);
+            }
         }
 
         FontRegistry.RecordCoverage(fontName, missing.ToArray());
 
-        texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+        // Nothing to upload for an empty atlas; the first glyph sizes and fills it.
+        if (texture.width > 0)
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+
         asset.ReadFontAssetDefinition();
+
+        // Where to re-open this face when a character has to be added later. Must be registered
+        // before anything can draw with the asset.
+        if (DynamicAtlas.Available)
+            DynamicAtlas.Register(asset, path, faceIndex);
 
         // Kerning: see LoadKerning. After ReadFontAssetDefinition, which creates the lookup
         // dictionary the records go into, and before another font's face replaces this one in
@@ -608,9 +646,13 @@ internal static class FontLoader
 
         RememberForWeightLinking(faceInfo, asset);
 
+        var coverage = DynamicAtlas.Available
+            ? "every character in the file, built as it is first drawn"
+            : $"{characterTable.Count} characters";
+
         ScriptedScreensFontsPlugin.Log?.LogInfo(
-            $"Font available: <font=\"{fontName}\"> ({characterTable.Count} characters, {kerningPairs} kerning pairs from {file})");
-        FontRegistry.Record(fontName, $"font file {file}, {characterTable.Count} characters, {kerningPairs} kerning pairs"
+            $"Font available: <font=\"{fontName}\"> ({coverage}, {kerningPairs} kerning pairs from {file})");
+        FontRegistry.Record(fontName, $"font file {file}, {coverage}, {kerningPairs} kerning pairs"
             + (complete ? string.Empty : ", atlas full so some characters are missing"));
 
         if (!complete)

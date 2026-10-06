@@ -4,6 +4,13 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- **A font file's whole character set is now usable.** Each face starts with an empty atlas and
+  builds a glyph the first time something draws it, so the 272-codepoint budget is gone: Barlow
+  carries 525 characters and all of them work, where 212 did before. Faces nothing draws cost no
+  texture at all, so memory falls rather than rises.
+- Corrected in the docs: a glyph the font genuinely lacks **is** substituted by TextMeshPro's own
+  global fallback, in another face. The guide previously claimed there was no substitution.
+
 - `FontApi.RequestFontWithReason` tells a caller why a font request produced nothing, so a mod can
   say something useful to a player standing at a console, who cannot read the log: an empty string
   on success, else `download-failed`, `disabled`, `face-limit`, `load-failed` or

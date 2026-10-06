@@ -83,6 +83,9 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 download = FontDownloader.Run(urls, System.IO.Path.Combine(userFolder, "downloaded"));
             }
 
+            // Before any font is built: whether growth is available decides how each is built.
+            DynamicAtlas.Install();
+
             FontApi.Configure(Config.Bind(
                 "Fonts",
                 "PageFontHosts",

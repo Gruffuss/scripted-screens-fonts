@@ -29,6 +29,15 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Done
 
+- [x] **Complete character coverage.** Faces are built as TMP dynamic assets with an empty atlas
+      and grow on demand, so every character a font file holds can be drawn. Seen in game:
+      Latin Extended-A and B, currency and Greek all drew from Barlow, which could only ever
+      show 212 of its 525 characters before. The whole blocker was one line, redirected with two
+      Harmony prefixes and no IL rewriting.
+- [x] Corrected a false claim in the shipped guide: a glyph the font lacks **is** substituted,
+      by TMP's global fallback. Barlow has no arrow, circle or box-drawing glyph and a label
+      asking for them drew them anyway, in another face.
+
 - [x] Measured how late game fonts arrive, which was pure folklore before ("up to an hour", never
       measured, now removed from the comments). Two separate sessions agree: the last arrival is
       at 80-82 s, after roughly 48-54 fonts at 16-18 s and two groups of 8 after that, then
@@ -67,6 +76,16 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **TMP's dynamic growth needs exactly one thing this mod cannot give it**: a Unity `Font` to
+  re-open the face with. Everything after that line in `TryAddCharacterInternal` is generic.
+  A prefix noting which asset is growing, plus a prefix on `FontEngine.LoadFontFace(Font, int)`
+  that loads the file's bytes instead, is the whole fix -- no IL rewriting, so it survives
+  anything but a change to those two signatures.
+- **The atlas must stay readable** for growth; `makeNoLongerReadable: true` would break it. That
+  earlier memory idea is dead, and starting the atlas empty saves far more anyway.
+- **An empty `Texture2D(0, 0)` is the supported starting point**, not a trick: it is exactly what
+  `TMP_FontAsset.CreateFontAsset` does for a dynamic asset, and TMP resizes it on first glyph.
 
 - **A font asset cannot grow here without a Harmony patch, and that is a choice, not a law.**
   Both routes gate on the same call: `TryAddCharacterInternal` and the public `TryAddCharacters`

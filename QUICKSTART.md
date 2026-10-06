@@ -61,12 +61,19 @@ end
   family, plus its style when that is not Regular.
 - **`stationeers://fonts/charset` is the exact answer** to "will this character draw": the full
   requested set, and the codepoints each loaded face is missing. Prefer it to the summary below.
+- **A font file's characters are all available**, built the first time each one is drawn, so
+  there is no set to stay inside any more. What follows describes the old fixed set and is kept
+  only for the case where on-demand growth could not be enabled; the log says which applies.
 - **Each loaded font has a fixed character set:** printable ASCII, Latin-1, and common UI
   symbols (dashes, curly quotes, `− ≈ ≠ ≤ ≥ ∞ √ Δ π Ω`, arrows, shapes, block bars, box
   drawing), plus anything in the `ExtraCharacters` setting. A character outside that set, or
   one the font file does not contain, does not draw. Barlow has no arrows, shapes or box
   drawing. Subscript digits are not in the set: write `CO2`.
-- **No substitution.** A missing glyph is not taken from another font. Switch face for that
+- **A glyph the font really lacks is substituted by TextMeshPro**, not by this mod. Measured
+  2026-10-06: Barlow has no arrow, filled circle or box-drawing glyph, and a label asking for
+  them drew them anyway, out of TMP's own global fallback chain. So the character appears, in a
+  different face, at a different weight. This mod adds no fallback of its own and cannot switch
+  that off. Switch face for that
   character to a font file that has it, or draw it another way. Do not reach for the game's
   symbol faces (`noto-punc` and most others): `stationeers://fonts/available` marks them as
   logging an error every frame in a label.
