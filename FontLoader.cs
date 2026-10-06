@@ -377,8 +377,80 @@ internal static class FontLoader
         return ordered;
     }
 
-    /// <returns>The name the font is available under, or null when it could not be loaded.</returns>
+    /// <summary>
+    /// Builds every face a font file offers: one, or one per named instance if it is a variable
+    /// font.
+    /// </summary>
+    /// <returns>The name of the first face built, or null when none could be.</returns>
     private static string? Load(string path, List<uint> charset)
+    {
+        byte[] bytes;
+        try
+        {
+            bytes = File.ReadAllBytes(path);
+        }
+        catch (IOException ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not read \"{Path.GetFileName(path)}\": {ex}");
+            return null;
+        }
+
+        var instances = NamedInstanceCount(bytes);
+        if (instances == 0)
+            return BuildFace(path, charset, bytes, 0);
+
+        // A variable font draws nothing by itself: its outlines only become a typeface once an
+        // instance is chosen. FreeType picks a named one through the high half of the face index
+        // (1-based; 0 is the default instance), so each is built as its own face and names itself
+        // from its own metadata, which also lets the family's weights link up as usual.
+        ScriptedScreensFontsPlugin.Log?.LogInfo(
+            $"\"{Path.GetFileName(path)}\" is a variable font with {instances} named instances; building each.");
+
+        string? first = null;
+        for (var instance = 1; instance <= instances; instance++)
+        {
+            var name = BuildFace(path, charset, bytes, instance << 16);
+            first ??= name;
+        }
+
+        return first;
+    }
+
+    /// <summary>
+    /// Reads how many named instances a variable font declares, from its <c>fvar</c> table.
+    /// Returns 0 for an ordinary font, which has no such table.
+    /// </summary>
+    private static int NamedInstanceCount(byte[] font)
+    {
+        try
+        {
+            var directory = 0;
+            if (font[0] == (byte)'t' && font[1] == (byte)'t' && font[2] == (byte)'c' && font[3] == (byte)'f')
+                directory = (int)ReadUInt32(font, 12);
+
+            var tables = ReadUInt16(font, directory + 4);
+            for (var i = 0; i < tables; i++)
+            {
+                var record = directory + 12 + (i * 16);
+                if (font[record] != (byte)'f' || font[record + 1] != (byte)'v'
+                    || font[record + 2] != (byte)'a' || font[record + 3] != (byte)'r')
+                    continue;
+
+                // fvar: version, axesArrayOffset, reserved, axisCount, axisSize, instanceCount.
+                return ReadUInt16(font, (int)ReadUInt32(font, record + 8) + 12);
+            }
+        }
+        catch (Exception ex)
+        {
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not read the font's instance table: {ex}");
+        }
+
+        return 0;
+    }
+
+    /// <param name="faceIndex">0 for an ordinary font, or a named instance in the high half.</param>
+    /// <returns>The name the face is available under, or null when it could not be loaded.</returns>
+    private static string? BuildFace(string path, List<uint> charset, byte[] sourceBytes, int faceIndex)
     {
         if (!_engineReady)
         {
@@ -393,9 +465,7 @@ internal static class FontLoader
 
         var file = Path.GetFileName(path);
 
-        var sourceBytes = File.ReadAllBytes(path);
-
-        if (FontEngine.LoadFontFace(sourceBytes, SamplingPointSize) != FontEngineError.Success)
+        if (FontEngine.LoadFontFace(sourceBytes, SamplingPointSize, faceIndex) != FontEngineError.Success)
         {
             ScriptedScreensFontsPlugin.Log?.LogWarning($"\"{file}\" is not a font file the engine can read.");
             return null;

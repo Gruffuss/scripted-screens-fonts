@@ -83,6 +83,9 @@ end
   `<font="Manrope Bold">`). WOFF2 is not read. Separate several links with **spaces, not commas**:
   a Google Fonts URL contains commas and semicolons of its own. A page (ScriptedScreens Html `@font-face`) may
   download only from the hosts in `PageFontHosts`, Google Fonts by default.
+- **A variable font gives all of its named instances**, each a separate name
+  (`<font="Cascadia Code SemiBold">`), and each with its own atlas in memory. A weight style the
+  font invents, such as SemiLight, still gets a name but has no `<font-weight>` slot to sit in.
 - **Own fonts go in `Documents/My Games/Stationeers/fonts`, never in the mod folder**, which a
   Workshop update replaces.
 - **Some of the game's own fonts log a Unity error every frame in a label** (their material

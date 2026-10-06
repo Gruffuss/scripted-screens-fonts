@@ -12,14 +12,22 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 Not started, not in flight. Nothing in this mod is half-finished.
 
-- [ ] `FontApi.RequestFont` (the runtime API another mod calls) is still unexercised in game.
-      `FontUrls` downloads are now confirmed; the API shares their cache but has its own
-      allowlist and callback path.
-- [ ] Variable fonts load only their default instance; named instances through the high bits of
-      `faceIndex` are untested.
-- [ ] Heartbeat stop condition from an expected font set (game fonts currently register forever).
+- [ ] How long game fonts really keep arriving is still unmeasured. The arrival-time log line now
+      exists to settle it; a long session is all that is needed. Observed so far: 54 fonts at
+      18 s, 8 more at 41 s, 8 more at 82 s.
 
 ## Done
+
+- [x] Variable fonts build every named instance as its own face, named from its own metadata and
+      weight-linked with its siblings. Seen in game: one file gave six faces, five of which fell
+      into weight slots (SemiLight has no TextMeshPro slot, so it is a name only).
+- [x] `FontApi.RequestFont` exercised in game through reflection, as another mod calls it: the
+      signature resolves, an allowed host is accepted and calls back with the registered name,
+      and a disallowed host is refused before anything is fetched.
+- [x] The rescan backs off when a session is quiet (doubling to about five minutes, reset by any
+      arrival) instead of walking every loaded object every 20 s for ever. Chosen over the stop
+      condition this ledger used to ask for: there is no font set to expect, so any threshold
+      that ends the scan can go blind.
 
 - [x] `<b>`, `<i>` and `<font-weight>` draw a family's real faces: every family links its weights
       to each other. Seen in game -- six pairs, each string drawn once by face name and once
@@ -38,6 +46,12 @@ Not started, not in flight. Nothing in this mod is half-finished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **Google Fonts never serves a variable font** to this downloader: it answers with static
+  instances, one file per weight, even for a variable-only family. Variable files only arrive
+  when a player puts one in the fonts folder.
+- **FreeType selects a named instance through the high half of the face index** (1-based), which
+  is what makes one variable file into several faces.
 
 - **Weight slots come from `TMP_FontAssetUtilities`** (Thin 1 .. Regular 4 .. Black 9), which is
   what actually reads `fontWeightTable`. `TMP_Text.GetFontAssetForWeight` indexes `weight / 100`

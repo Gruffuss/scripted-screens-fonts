@@ -4,6 +4,18 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- Variable fonts work: a file with named instances builds every one of them as its own face, so
+  a single variable `.ttf` gives `<font="Cascadia Code Light">` through `<font="Cascadia Code
+  Bold">` and links their weights like any other family. Each instance carries its own atlas, so
+  a font with many instances costs proportionally more memory; switch the file off in the config
+  if that is not wanted. (Fonts downloaded from Google Fonts are static files already, one per
+  weight, so this only concerns files put in the fonts folder by hand.)
+- The font rescan now backs off once a session settles -- each quiet pass doubles the wait, up to
+  about five minutes, and drops back the moment a font appears -- instead of walking every loaded
+  object every 20 seconds for the whole session. Fonts that arrive late are still picked up.
+- Each registration logs how many fonts arrived and how long after startup, which is the first
+  measurement of how late game fonts really turn up.
+
 - `<b>`, `<i>` and `<font-weight>` now draw a family's real faces. Every loaded family links its
   weights to each other, so `<font="Barlow"><b>` is the actual Barlow Bold rather than TextMeshPro
   smearing the Regular, and `<i>` is the drawn italic rather than a slant. Weights the family does
