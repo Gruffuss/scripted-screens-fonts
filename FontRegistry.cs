@@ -91,9 +91,12 @@ internal static class FontRegistry
                 MaterialReferenceManager.AddFontAsset(font);
                 added++;
                 ScriptedScreensFontsPlugin.Log?.LogInfo($"Font available: <font=\"{name}\">");
-                Record(name, (WarnIfUiIncompatible(font, name)
-                    ? "game font; its material lacks _CullMode, so a ScriptedScreens label using it logs a Unity error every frame -- avoid"
-                    : "game font") + KerningNote(font));
+                // The _CullMode warning goes last because it ends in "avoid", which read as the
+                // start of a list once the kerning note was appended after it.
+                var incompatible = WarnIfUiIncompatible(font, name);
+                Record(name, "game font" + KerningNote(font) + (incompatible
+                    ? "; its material lacks _CullMode, so a ScriptedScreens label using it logs a Unity error every frame -- avoid"
+                    : string.Empty));
             }
             catch (Exception ex)
             {
