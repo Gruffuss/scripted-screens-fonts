@@ -10,16 +10,16 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Backlog
 
-Not started, not in flight. Nothing in this mod is half-finished.
+Empty. Nothing in this mod is started-and-unfinished.
 
-- [ ] How long game fonts keep arriving is now measured for an **idle** session and nothing else:
-      54 at 18 s, 8 at 41 s, 8 at 82 s, then nothing for the remaining four minutes the game was
-      up. The case that would take longer is the one that cannot be measured by standing still --
-      signage faces load with the prefabs that use them, so they appear when a player walks
-      somewhere new. Needs a session where someone actually moves around. The "up to an hour"
-      figure the comments used to carry was never measured and has been removed.
 
 ## Done
+
+- [x] Measured how late game fonts arrive, which was pure folklore before ("up to an hour", never
+      measured, now removed from the comments). Two separate sessions agree: the last arrival is
+      at 80-82 s, after roughly 48-54 fonts at 16-18 s and two groups of 8 after that, then
+      nothing for the rest of the session. See the known-unknown below for what this does not
+      cover.
 
 - [x] `stationeers://fonts/charset` publishes the exact character set and each face's gaps, so a
       page builder can warn precisely rather than from prose. Seen in game: 45 faces listed,
@@ -53,6 +53,12 @@ Not started, not in flight. Nothing in this mod is half-finished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **The 80 s figure is for a session where nobody moves.** Signage faces load with the prefabs
+  that use them, so a player walking somewhere new can still bring one in much later. That case
+  needs a normal play session to measure and has never been observed, only reasoned about; the
+  rescan therefore backs off rather than stopping, and no code should assume the font list is
+  final. Every registration logs its arrival time, so any ordinary session settles it for free.
 
 - **Google Fonts never serves a variable font** to this downloader: it answers with static
   instances, one file per weight, even for a variable-only family. Variable files only arrive
