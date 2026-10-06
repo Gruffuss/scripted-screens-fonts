@@ -4,6 +4,15 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- `<b>`, `<i>` and `<font-weight>` now draw a family's real faces. Every loaded family links its
+  weights to each other, so `<font="Barlow"><b>` is the actual Barlow Bold rather than TextMeshPro
+  smearing the Regular, and `<i>` is the drawn italic rather than a slant. Weights the family does
+  not ship are left alone. Downloaded families link the same way.
+- Fixed: a `FontUrls` link was cut at its first `;` or `,`, so a Google Fonts link asking for two
+  weights silently downloaded only the first one -- including the example the setting's own
+  description gives. Links are now separated by whitespace only, since both characters occur
+  inside a Google Fonts URL (`family=Inter:wght@400;700`, `family=Inter:ital,wght@0,400;1,700`).
+
 - Loaded fonts are kerned: each face's letter-pair spacing is read from the font's OpenType
   GPOS table, so `AV`, `To` and `LT` tuck together the way they do in a browser instead of
   sitting evenly spaced. The `Kerning` setting turns it off. It applies wherever the font is

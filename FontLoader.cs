@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Linq;
 using BepInEx.Configuration;
 using TMPro;
@@ -145,7 +146,11 @@ internal static class FontLoader
 
         try
         {
-            return Load(path, _charset ??= BuildCharacterSet(_extraCharacters));
+            var name = Load(path, _charset ??= BuildCharacterSet(_extraCharacters));
+
+            // A font requested at runtime may be a family's missing Bold, so re-link.
+            LinkWeights();
+            return name;
         }
         catch (Exception ex)
         {
@@ -335,6 +340,8 @@ internal static class FontLoader
                 ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not load \"{Path.GetFileName(file)}\": {ex}");
             }
         }
+
+        LinkWeights();
     }
 
     /// <summary>
@@ -509,6 +516,8 @@ internal static class FontLoader
         MaterialReferenceManager.AddFontAsset(asset);
         if (Kerning)
             WarnIfKerningIsOff();
+
+        RememberForWeightLinking(faceInfo, asset);
 
         ScriptedScreensFontsPlugin.Log?.LogInfo(
             $"Font available: <font=\"{fontName}\"> ({characterTable.Count} characters, {kerningPairs} kerning pairs from {file})");
@@ -697,6 +706,136 @@ internal static class FontLoader
 
     /// <summary>
     /// Names the asset the way an author would write it: family alone for the regular
+    /// <summary>Every loaded face of one family, by family name, for <see cref="LinkWeights"/>.</summary>
+    private static readonly Dictionary<string, List<(int Weight, bool Italic, TMP_FontAsset Asset)>> Families =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Files the face under its family so its siblings can be linked to it once they are all
+    /// built. Nothing can be linked while loading, because a family's Bold may load after its
+    /// Regular.
+    /// </summary>
+    private static void RememberForWeightLinking(FaceInfo faceInfo, TMP_FontAsset asset)
+    {
+        var family = faceInfo.familyName;
+        if (string.IsNullOrEmpty(family))
+            return;
+
+        var weight = WeightIndex(faceInfo.styleName, out var italic);
+        if (weight == 0)
+            return;
+
+        if (!Families.TryGetValue(family, out var faces))
+            Families[family] = faces = new List<(int, bool, TMP_FontAsset)>();
+
+        faces.Add((weight, italic, asset));
+    }
+
+    /// <summary>
+    /// Reads a face's style name as a TextMeshPro weight slot, so "Bold Italic" becomes slot 7
+    /// italic. Returns 0 for a style this does not recognise, which is then left out rather than
+    /// guessed at: a wrong slot would make &lt;b&gt; draw the wrong face.
+    /// </summary>
+    private static int WeightIndex(string? styleName, out bool italic)
+    {
+        // Upper case and letters only, with "ITALIC" taken out, so "Bold Italic", "BoldItalic"
+        // and "bold-italic" all reduce to "BOLD". Built by hand because the framework here has
+        // no Replace/Contains overload taking a StringComparison.
+        var style = (styleName ?? string.Empty).ToUpperInvariant();
+        italic = false;
+
+        var token = new StringBuilder(style.Length);
+        for (var i = 0; i < style.Length; i++)
+        {
+            if (i + 6 <= style.Length && string.CompareOrdinal(style, i, "ITALIC", 0, 6) == 0)
+            {
+                italic = true;
+                i += 5;
+                continue;
+            }
+
+            if (style[i] >= 'A' && style[i] <= 'Z')
+                token.Append(style[i]);
+        }
+
+        // The slots TMP_FontAssetUtilities indexes: Thin 1 .. Black 9, Regular 4.
+        switch (token.ToString())
+        {
+            case "":
+            case "REGULAR": return 4;
+            case "THIN":
+            case "HAIRLINE": return 1;
+            case "EXTRALIGHT":
+            case "ULTRALIGHT": return 2;
+            case "LIGHT": return 3;
+            case "MEDIUM": return 5;
+            case "SEMIBOLD":
+            case "DEMIBOLD": return 6;
+            case "BOLD": return 7;
+            case "EXTRABOLD":
+            case "ULTRABOLD": return 8;
+            case "BLACK":
+            case "HEAVY": return 9;
+            default: return 0;
+        }
+    }
+
+    /// <summary>
+    /// Points each face's weight table at its siblings, so &lt;b&gt;, &lt;i&gt; and
+    /// &lt;font-weight&gt; inside a label draw the family's real Bold, Italic and Light instead of
+    /// TextMeshPro slanting and smearing the one face it was given.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// <c>TMP_FontAssetUtilities.GetCharacterFromFontAsset_Internal</c> reads
+    /// <c>sourceFontAsset.fontWeightTable</c> whenever the style is italic or the weight is not
+    /// Regular, and takes <c>italicTypeface</c> or <c>regularTypeface</c> from the slot. (The
+    /// <c>TMP_Text.GetFontAssetForWeight</c> that indexes by <c>weight / 100</c> is dead code in
+    /// this version and uses a different slot numbering; do not follow it.)
+    /// </para>
+    /// <para>
+    /// Every face of the family gets the same table, so the tags work whichever member the label
+    /// names. A weight the family does not ship stays null, which simply falls through to the
+    /// face in use. Rebuilt from scratch each call, so loading a font later re-links cleanly.
+    /// </para>
+    /// </remarks>
+    private static void LinkWeights()
+    {
+        var summary = new StringBuilder();
+
+        foreach (var family in Families)
+        {
+            var table = new TMP_FontWeightPair[10];
+            foreach (var (weight, italic, asset) in family.Value)
+            {
+                if (italic)
+                    table[weight].italicTypeface = asset;
+                else
+                    table[weight].regularTypeface = asset;
+            }
+
+            foreach (var face in family.Value)
+                face.Asset.fontWeightTable = table;
+
+            var upright = table.Count(pair => pair.regularTypeface != null);
+            var italics = table.Count(pair => pair.italicTypeface != null);
+            if (summary.Length > 0)
+                summary.Append(", ");
+
+            summary.Append($"{family.Key} {upright}+{italics}i");
+        }
+
+        // The weights each family ended up with, so a style name this does not recognise shows up
+        // as a missing slot in the log rather than as a tag silently drawing the wrong face.
+        if (summary.Length > 0 && !string.Equals(_weightSummary, summary.ToString(), StringComparison.Ordinal))
+        {
+            _weightSummary = summary.ToString();
+            ScriptedScreensFontsPlugin.Log?.LogInfo($"Weights linked: {_weightSummary}.");
+        }
+    }
+
+    private static string? _weightSummary;
+
     /// weight, family plus style otherwise, so Barlow-Bold.ttf becomes "Barlow Bold".
     /// </summary>
     /// <remarks>

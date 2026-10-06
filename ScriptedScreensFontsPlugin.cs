@@ -70,7 +70,7 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 "FontUrls",
                 "",
                 "Fonts to download: links to .ttf or .otf files, or Google Fonts CSS links such as "
-                + "https://fonts.googleapis.com/css2?family=Manrope:wght@400;700 , separated by spaces or commas. "
+                + "https://fonts.googleapis.com/css2?family=Manrope:wght@400;700 , separated by spaces. "
                 + "Each is downloaded once into the fonts/downloaded folder in your save folder and then "
                 + "loads from there. Takes effect after a restart.");
 
@@ -88,7 +88,7 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 "PageFontHosts",
                 "fonts.googleapis.com fonts.gstatic.com",
                 "Hosts a page (a ScriptedScreens Html @font-face, or any mod through the fonts API) may "
-                + "download fonts from, separated by spaces or commas; subdomains included. A font file is "
+                + "download fonts from, separated by spaces; subdomains included. A font file is "
                 + "read by native code, so list only hosts that serve fonts you trust: Google Fonts serves "
                 + "only its own curated files, a general CDN serves anything anyone uploads. Empty refuses "
                 + "every page download. Links in FontUrls are not limited by this. Applies at once."));

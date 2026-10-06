@@ -73,11 +73,15 @@ end
   advances will over-estimate. The `Kerning` setting turns it off. Most of the game's own faces
   kern too, from pairs baked into them when they were made; `stationeers://fonts/available`
   gives the pair count for every font, so a face that does not kern is visible there.
+- **`<b>`, `<i>` and `<font-weight=N>` pick the family's real faces** when it ships them, so
+  `<font="Barlow"><b>text</b>` equals `<font="Barlow Bold">text` exactly. A weight the family does
+  not have falls back to the face in use, unstyled.
 - **Adding a font file or toggling one needs a game restart.** Fonts are built once.
 - **Fonts can also be downloaded:** links in the `FontUrls` setting (a `.ttf`/`.otf` file, or a
   Google Fonts CSS link such as `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700`)
   are fetched once into `fonts/downloaded` and named from the font (`Manrope-Bold` is
-  `<font="Manrope Bold">`). WOFF2 is not read. A page (ScriptedScreens Html `@font-face`) may
+  `<font="Manrope Bold">`). WOFF2 is not read. Separate several links with **spaces, not commas**:
+  a Google Fonts URL contains commas and semicolons of its own. A page (ScriptedScreens Html `@font-face`) may
   download only from the hosts in `PageFontHosts`, Google Fonts by default.
 - **Own fonts go in `Documents/My Games/Stationeers/fonts`, never in the mod folder**, which a
   Workshop update replaces.

@@ -34,7 +34,10 @@ internal static class FontDownloader
     private const string IndexFile = "sources.txt";
     private const int TimeoutSeconds = 30;
 
-    private static readonly char[] UrlSeparators = { ',', ' ', '\n', '\r', '\t', ';' };
+    // Whitespace only. A Google Fonts CSS link carries both ';' and ',' inside it
+    // (`family=Inter:wght@400;700`, `family=Inter:ital,wght@0,400;1,700`), so either as a
+    // separator cuts the link in half and silently downloads only its first weight.
+    private static readonly char[] UrlSeparators = { ' ', '\n', '\r', '\t' };
     private static readonly char[] FileSeparator = { '|' };
     private static readonly Regex CssUrl = new(@"url\(\s*['""]?([^'"")\s]+)['""]?\s*\)", RegexOptions.Compiled);
 
