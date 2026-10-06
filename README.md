@@ -138,7 +138,8 @@ where a general CDN serves anything anyone uploads. A stylesheet's font links mu
 same check. Empty refuses every page download; the setting applies at once.
 
 Page fonts use the same `fonts/downloaded` cache, so each downloads once. A font you have
-switched off stays off, and a session builds at most 48 page font faces (about 1 MB each).
+switched off stays off, and a session builds at most 48 page font faces. The cap is on how many
+faces a page may bring in, not on memory: a face costs only the glyphs something actually draws.
 
 For mod authors, the call, by reflection so neither mod needs the other to build:
 
