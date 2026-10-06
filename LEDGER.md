@@ -10,9 +10,16 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Backlog
 
-- [ ] `RequestFontWithReason` is built and deployed but **not seen in game**: the three failure
-      paths it names (`download-failed`, `disabled`, `face-limit`) have not been provoked on a
-      console. Verify at the next restart that is free to use.
+- [ ] `RequestFontWithReason` is built and deployed but **not seen in game**. How each token can
+      actually be provoked, since they are not equally reachable:
+      - `download-failed` -- an allowed host with a path that 404s. Genuine.
+      - `disabled` -- switch a downloaded file off in the config, then request its link. Genuine.
+      - `load-failed` -- an allowed host serving a file that is not a font. Genuine.
+      - `face-limit` -- needs 48 page faces in one session, so it is reachable only by lowering
+        the cap in a temporary build: that checks the arithmetic, not the real limit.
+      - `loader-unavailable` -- **cannot occur naturally**: it needs the shader to stay missing
+        for 60 s, which does not happen. Only a temporary build holding that condition can
+        exercise it. Say so when reporting it, or the claim is stronger than the evidence.
 
 
 ## Done
