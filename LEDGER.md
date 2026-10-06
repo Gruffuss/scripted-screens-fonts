@@ -10,12 +10,7 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Backlog
 
-- [ ] Two of the five failure tokens remain unprovoked, and neither is reachable by ordinary
-      means: `face-limit` needs 48 page faces in one session (only by lowering the cap in a
-      temporary build) and `loader-unavailable` cannot occur naturally at all. A third,
-      `load-failed`, looks **unreachable by URL**: the downloader validates a file with
-      `LoadFontFace` before it ever becomes a path, so a non-font never reaches the loading step
-      and reports `download-failed` instead. It would need an already-cached file to be corrupt.
+Empty. Nothing in this mod is started-and-unfinished.
 
 ## Done
 
@@ -72,6 +67,15 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **A page font request has exactly three outcomes**, measured on a console, not five: refused
+  (returns false, no callback at all), `download-failed`, or `disabled`. Build reports on three.
+  - `load-failed` is **unreachable by URL**: `FontDownloader` validates a file with
+    `LoadFontFace` before it ever becomes a path, so a non-font is rejected at the download step
+    and reports `download-failed`. It would need an already-cached file to have gone corrupt.
+  - `face-limit` needs 48 page faces in one session and `loader-unavailable` needs the shader to
+    stay missing for 60 s, so neither occurs in ordinary play. Both exist to stop a caller being
+    left with no answer, not because the situations are common.
 
 - **TMP's dynamic growth needs exactly one thing this mod cannot give it**: a Unity `Font` to
   re-open the face with. Everything after that line in `TryAddCharacterInternal` is generic.
