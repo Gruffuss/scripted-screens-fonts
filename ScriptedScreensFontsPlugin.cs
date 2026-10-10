@@ -37,6 +37,13 @@ public sealed class ScriptedScreensFontsPlugin : ModBehaviour
                 // Logger already disposed or source name taken; logging is non-essential.
             }
 
+            // Which build is actually running, from the loaded assembly rather than a file date.
+            // Without it, "is my build loaded?" can only be answered by comparing the deployed
+            // DLL's timestamp against the game's process start time -- and on 2026-10-10 a
+            // restart script that reported failure while the game was up meant several builds
+            // were "tested" against a process older than the build itself.
+            Log.LogInfo($"ScriptedScreens Fonts {PluginInfo.PLUGIN_VERSION_CONST} loaded.");
+
             if (Application.isBatchMode)
             {
                 Log.LogInfo("Headless server detected, skipping font registration.");

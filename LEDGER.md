@@ -14,6 +14,10 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Done
 
+- [x] The mod logs its own version at startup (`ScriptedScreens Fonts 0.3.0.0 loaded.`), so
+      "is my build actually running?" is answered by the loaded assembly instead of by comparing
+      a file date with a process start time. Seen in the log.
+
 - [x] Fixed on-demand glyphs being silently dead: the redirect re-opens a face from its **file
       path**, not from a byte array. Seen in game -- Barlow 167 px, Barlow Condensed 130 px,
       Barlow again 167 px, where all three measured an identical 194 px while broken.
@@ -83,6 +87,12 @@ Empty. Nothing in this mod is started-and-unfinished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **Confirm a build is loaded from the thing itself, not from a clock.** The startup version line
+  is the check; the vector mod uses `vector_stats` the same way. Timestamps are the fallback, and
+  on 2026-10-10 they were what let several builds be "tested" against a game process older than
+  the build (process 14:12:03, DLLs 14:15 and 14:18) because the restart script reported failure
+  while the game was up.
 
 - **`FontEngine.LoadFontFace(byte[], ...)` can return `Success`, report the correct family and
   style, and still expose no glyphs at all.** Measured 2026-10-10: `BarlowCondensed-Bold.ttf`
