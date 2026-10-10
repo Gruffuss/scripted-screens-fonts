@@ -14,6 +14,10 @@ Empty. Nothing in this mod is started-and-unfinished.
 
 ## Done
 
+- [x] Fixed on-demand glyphs being silently dead: the redirect re-opens a face from its **file
+      path**, not from a byte array. Seen in game -- Barlow 167 px, Barlow Condensed 130 px,
+      Barlow again 167 px, where all three measured an identical 194 px while broken.
+
 - [x] Removed the `ExtraCharacters` setting. It existed to widen a fixed character set that no
       longer exists; every character is built on demand. The fallback path keeps its own built-in
       set and needs no configuring.
@@ -79,6 +83,18 @@ Empty. Nothing in this mod is started-and-unfinished.
       allowlist, the MCP documentation scope and the shipped examples.
 
 ## Do not re-derive
+
+- **`FontEngine.LoadFontFace(byte[], ...)` can return `Success`, report the correct family and
+  style, and still expose no glyphs at all.** Measured 2026-10-10: `BarlowCondensed-Bold.ttf`
+  loaded from bytes gave `TryGetGlyphIndex('A') == false`, with and without a face index, after
+  an engine re-init; the same file by **path** gave glyph 4. TMP checks the glyph index *before*
+  it sizes the atlas, so the atlas stayed `0x0`, every character fell back to another face, and
+  nothing was logged -- it reads exactly like the `<font>` tag being ignored. Load faces by path.
+  Why the byte overload changed is unknown; nothing in this mod changed between the build that
+  worked on 2026-10-06 and the one that failed on 2026-10-10, so something underneath did
+  (LaunchPad updated twice in between).
+- **A silent failure in the growth path costs hours.** The redirect now warns once when a face
+  will not load. Keep that: the whole fault was invisible without it.
 
 - **`FontEngine` holds one face globally**, so the `LoadFontFace` prefix must never answer a call
   that is not ours: the caller would lay its text out with our glyph indices and metrics. The

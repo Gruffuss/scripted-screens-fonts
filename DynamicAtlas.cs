@@ -47,15 +47,9 @@ internal static class DynamicAtlas
     /// <summary>The asset currently being grown, and so the face the engine should be holding.</summary>
     private static Source? _growing;
 
-    /// <summary>
-    /// The last file read, kept because TMP re-opens the face once per glyph: a page drawing
-    /// ninety new characters would otherwise read the same few hundred kilobytes ninety times.
-    /// One entry is enough, since the glyphs of one frame are nearly always one face.
-    /// </summary>
-    private static string? _cachedPath;
-    private static byte[]? _cachedBytes;
 
     private static bool _installed;
+    private static bool _loadFailureLogged;
 
     /// <summary>Held for the session: the patches must outlive this call, so it is never disposed.</summary>
     private static Harmony? _harmony;
@@ -93,7 +87,8 @@ internal static class DynamicAtlas
                 prefix: new HarmonyMethod(AccessTools.Method(typeof(DynamicAtlas), nameof(BeforeLoadFace))));
 
             _installed = true;
-            ScriptedScreensFontsPlugin.Log?.LogInfo("Fonts can grow on demand: every character a font file contains is available.");
+            ScriptedScreensFontsPlugin.Log?.LogInfo(
+                "Fonts can grow on demand: every character a font file contains is available.");
         }
         catch (Exception ex)
         {
@@ -130,21 +125,29 @@ internal static class DynamicAtlas
 
         try
         {
-            if (!string.Equals(_cachedPath, source.Path, StringComparison.Ordinal))
-            {
-                _cachedBytes = File.ReadAllBytes(source.Path);
-                _cachedPath = source.Path;
-            }
+            // From the file, not from bytes. Loading the same font from a byte array returns
+            // Success and the right face name, yet exposes no glyphs at all: TryGetGlyphIndex
+            // said 'A' did not exist in BarlowCondensed-Bold.ttf, with and without a face index.
+            // TMP then gives up before sizing the atlas and sends every character to another
+            // face, which reads as the font tag being ignored. The path overload gives a face
+            // that answers glyph lookups.
+            __result = source.FaceIndex == 0
+                ? FontEngine.LoadFontFace(source.Path, pointSize)
+                : FontEngine.LoadFontFace(source.Path, pointSize, source.FaceIndex);
 
-            __result = FontEngine.LoadFontFace(_cachedBytes, pointSize, source.FaceIndex);
+            if (__result != FontEngineError.Success && !_loadFailureLogged)
+            {
+                _loadFailureLogged = true;
+                ScriptedScreensFontsPlugin.Log?.LogWarning(
+                    $"Font growth failed: re-opening \"{Path.GetFileName(source.Path)}\" at {pointSize} pt, face index {source.FaceIndex}, returned {__result}. "
+                    + $"Characters will fall back to another face.");
+            }
         }
         catch (Exception ex)
         {
             // The file moved or is unreadable: report nothing loaded, exactly as a failed
             // original would, and let the character fall through to whatever draws it now.
             ScriptedScreensFontsPlugin.Log?.LogWarning($"Could not re-open \"{source.Path}\" to add a character: {ex.Message}");
-            _cachedPath = null;
-            _cachedBytes = null;
             __result = FontEngineError.Invalid_Face;
         }
 
