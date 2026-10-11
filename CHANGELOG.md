@@ -2,6 +2,14 @@
 
 Newest first. The workshop page carries only the latest releases; this file has all of them.
 
+## Unreleased
+
+- Fixed: a page's font request past the 48-faces-per-session limit downloaded its file in full
+  before refusing it, so a page declaring many distinct links, or varying its link, made every
+  player fetch files none of them could ever load. The limit now gates the download, and
+  downloads still in flight count against it. A cached file is still checked, so a face already
+  built this session costs nothing.
+
 ## 0.3.0
 
 - **A font file's whole character set is now usable.** Each face starts with an empty atlas and

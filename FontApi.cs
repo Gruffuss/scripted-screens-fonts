@@ -44,6 +44,7 @@ public static class FontApi
     private static readonly Dictionary<string, Pending> Requests = new(StringComparer.Ordinal);
     private static ConfigEntry<string>? _hosts;
     private static int _faces;
+    private static int _downloading;
 
     private sealed class Pending
     {
@@ -163,8 +164,35 @@ public static class FontApi
         {
             if (!FontDownloader.TryCached(url, folder, out paths))
             {
+                // The limit gates the DOWNLOAD, not only the build. Checked after the fetch, as
+                // it was until 2026-10-11, a session already at the limit still pulled every
+                // further link off the network before refusing it -- and page source reaches
+                // every player, so a page declaring many distinct links, or varying its link,
+                // made every player download files none of them could ever load.
+                //
+                // In-flight downloads count against the limit too: each will bring at least one
+                // face, and without them a page firing 500 links in one frame starts 500
+                // coroutines that all read _faces == 0 and all fetch. A cached file is a
+                // directory lookup, so it is still checked below the gate and a face already
+                // built this session resolves for free.
+                if (_faces + _downloading >= MaxPageFaces)
+                {
+                    capReached = true;
+                    ScriptedScreensFontsPlugin.Log?.LogWarning(
+                        $"Font request {url}: {MaxPageFaces} page font faces this session, nothing further is downloaded.");
+                    yield break;
+                }
+
                 paths = new List<string>();
-                yield return FontDownloader.Fetch(url, folder, Allowed, paths);
+                _downloading++;
+                try
+                {
+                    yield return FontDownloader.Fetch(url, folder, Allowed, paths);
+                }
+                finally
+                {
+                    _downloading--;
+                }
             }
 
             // The launch's own fonts first; a cached file may be among them already. Bounded,
@@ -234,11 +262,11 @@ public static class FontApi
         if (names.Length > 0)
             return string.Empty;
 
-        if (!ready)
-            return "loader-unavailable";
-
         if (capReached)
             return "face-limit";
+
+        if (!ready)
+            return "loader-unavailable";
 
         if (paths == null || paths.Count == 0)
             return "download-failed";
