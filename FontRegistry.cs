@@ -110,6 +110,7 @@ internal static class FontRegistry
                 // No-ops internally if TMP already has this hash, so no pre-check needed.
                 MaterialReferenceManager.AddFontAsset(font);
                 added++;
+                FontApi._registrations++;
                 ScriptedScreensFontsPlugin.Log?.LogInfo($"Font available: <font=\"{name}\">");
                 // The _CullMode warning goes last because it ends in "avoid", which read as the
                 // start of a list once the kerning note was appended after it.

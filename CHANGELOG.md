@@ -4,6 +4,11 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- `FontApi.Registrations` counts the font faces registered this session, by every route: game
+  fonts as their bundles load, files, `FontUrls` downloads and page requests. A mod that caches a
+  laid-out page can compare it against the number it held at layout time to know whether a redraw
+  could change anything -- a face arriving by any route other than its own request callback comes
+  with no notification.
 - Fixed: a page's font request past the 48-faces-per-session limit downloaded its file in full
   before refusing it, so a page declaring many distinct links, or varying its link, made every
   player fetch files none of them could ever load. The limit now gates the download, and

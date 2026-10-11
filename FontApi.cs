@@ -46,6 +46,26 @@ public static class FontApi
     private static int _faces;
     private static int _downloading;
 
+    /// <summary>
+    /// How many font faces this session has registered with TextMeshPro, by every route: the
+    /// game's own fonts as their bundles load, files from the player's folder and the mod,
+    /// <c>FontUrls</c> downloads, and page requests. Only ever increases.
+    /// </summary>
+    /// <remarks>
+    /// For a consumer that caches a laid-out page: a face registered by any route other than its
+    /// own <see cref="RequestFont"/> callback arrives with no notification, so a label that fell
+    /// back to another face stays wrong until something redraws it. Comparing this number against
+    /// the one held at the last layout costs an integer read and says whether a redraw could
+    /// change anything. It says nothing about WHICH face arrived: the names are in the MCP
+    /// catalogue, <c>stationeers://fonts/available</c>.
+    /// </remarks>
+    public static int Registrations => _registrations;
+
+    // Bumped at both places a face reaches MaterialReferenceManager: FontRegistry.ScanAndRegister
+    // for the game's own assets, FontLoader.BuildFace for everything built from a file. After the
+    // AddFontAsset call in each, so a registration that throws is not counted.
+    internal static int _registrations;
+
     private sealed class Pending
     {
         public readonly List<Action<string[], string>> Callbacks = new();

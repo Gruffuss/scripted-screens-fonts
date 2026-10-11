@@ -641,6 +641,7 @@ internal static class FontLoader
         var kerningPairs = Kerning ? LoadKerning(asset, glyphIndexes, UnitsPerEm(sourceBytes), file) : 0;
 
         MaterialReferenceManager.AddFontAsset(asset);
+        FontApi._registrations++;
         if (Kerning)
             WarnIfKerningIsOff();
 
