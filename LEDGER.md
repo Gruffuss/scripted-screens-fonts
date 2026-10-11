@@ -13,11 +13,10 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       against nine cases including the misnamed file). In game: all 50 file faces register with
       identical names, kerning counts and source files, weights identical, a real download is
       named and drawn correctly.
-- [ ] **Owner decision: every loaded font file stays locked while the game runs** (measured on the
-      path-loading build: a bundled, a downloaded and a player's own file, none ever drawn, all
-      "Device or resource busy"). Before, by the code, only files a face had drawn from were held
-      open. Options: accept it (documented in README and CHANGELOG), or open private temporary
-      copies so the player's files stay free.
+- [x] **Every loaded font file stays locked while the game runs** -- kept, owner's decision
+      2026-10-11 (measured: a bundled, a downloaded and a player's own file, none ever drawn, all
+      "Device or resource busy"). Documented in README and CHANGELOG; private temporary copies
+      were the alternative, declined.
 - [ ] A test download, `fonts/downloaded/Audiowide-Regular.ttf`, is left in the cache (held open
       while the game runs). At the next game close: delete it, its `sources.txt` line and its
       config section -- or keep it, it is an ordinary Google font.
