@@ -4,14 +4,16 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
-- [ ] **Before publishing 0.4.0, two checks need one game restart** (held 2026-10-11: another session
-      was using the game). (1) A variable font still gives every named instance now that faces open
-      by path: copy Windows' `CascadiaCode.ttf` (6 instances) into the player's fonts folder,
-      restart, expect six distinct `Cascadia Code ...` faces and six visibly different weights on
-      a console. It worked on the byte loader (an earlier log); every instance shares one path, so
-      a path-keyed cache could hand back one face six times -- if so it is a code fix, not a doc
-      fix. (2) The MCP resources show the corrected text (the `charset` description, the
-      `available` fallback line). Then remove the test font and Audiowide at the next game close.
+- [x] **Both pre-publish game checks pass** (2026-10-11). (1) A variable font on the path loader:
+      Windows' `CascadiaCode.ttf` registered six distinct `Cascadia Code ...` faces from one file,
+      and drawn on a console their ink rose at every step, ExtraLight 347k to Bold 850k -- six real
+      weights, not one face six times. (2) The live MCP resources serve the corrected text: the
+      `charset` description and body, the `available` fallback line, the index from the new
+      QUICKSTART, the guide and changelog from the new README and CHANGELOG (7 of 7 checks).
+- [ ] Test fonts left in the player's folder, held open while the game runs:
+      `fonts/CascadiaCode.ttf` and `fonts/downloaded/Audiowide-Regular.ttf`. At the next game
+      close, delete both, Audiowide's `sources.txt` line and their two config sections -- or keep
+      them; both are ordinary fonts.
 - [x] Docs audited for the 0.4.0 publish (2026-10-11): README, QUICKSTART, CHANGELOG, About.xml,
       the MCP text in `FontsDocsTool`, the `FontApi` doc comments and the examples, every claim checked
       against the code or a measurement; links, versions, the shipped file list and the DLL
@@ -30,9 +32,6 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       2026-10-11 (measured: a bundled, a downloaded and a player's own file, none ever drawn, all
       "Device or resource busy"). Documented in README and CHANGELOG; private temporary copies
       were the alternative, declined.
-- [ ] A test download, `fonts/downloaded/Audiowide-Regular.ttf`, is left in the cache (held open
-      while the game runs). At the next game close: delete it, its `sources.txt` line and its
-      config section -- or keep it, it is an ordinary Google font.
 
 - [x] Page font requests followed redirects to any host (no `redirectLimit`, Unity's default 32),
       so `PageFontHosts` bounded only the link as written. Fixed by refusing redirects on page
