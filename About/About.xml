@@ -27,6 +27,9 @@ The mod folder holds four examples that run on paste, a quick start (QUICKSTART.
 
 [h2]What's new in 0.4.0[/h2]
 [list]
+[*] [b]A page's font link can no longer be redirected to a site you have not allowed.[/b] The
+allowed-sites setting was checked against the link as written, not against where the download
+ended up.
 [*] [b]A page asking for too many fonts no longer downloads them anyway.[/b] A console page may
 bring in up to 48 font faces; past that, further links are now refused before the file is
 fetched rather than after, so a page that asks for more does not make every player download

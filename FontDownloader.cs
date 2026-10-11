@@ -133,6 +133,17 @@ internal static class FontDownloader
     {
         using var request = UnityWebRequest.Get(url);
         request.timeout = TimeoutSeconds;
+
+        // A page request is limited to the hosts in PageFontHosts, and that check can only read
+        // the URL as written. UnityWebRequest follows up to 32 redirects by default, to any host,
+        // so an allowed host could hand the download to one that is not -- seen happen on
+        // 2026-10-11, the bytes arriving from a host the list never named. So a page request
+        // refuses redirects outright. Google Fonts, the default, answers its stylesheets and its
+        // files with 200 directly (measured the same day), so nothing legitimate is lost.
+        // FontUrls, the player's own links, have no host list and may still redirect.
+        if (allowed != null)
+            request.redirectLimit = 0;
+
         yield return request.SendWebRequest();
 
         if (request.result != UnityWebRequest.Result.Success)
@@ -165,6 +176,9 @@ internal static class FontDownloader
 
             using var font = UnityWebRequest.Get(fontUrl);
             font.timeout = TimeoutSeconds;
+            if (allowed != null)
+                font.redirectLimit = 0;   // as for the stylesheet above
+
             yield return font.SendWebRequest();
 
             if (font.result == UnityWebRequest.Result.Success)

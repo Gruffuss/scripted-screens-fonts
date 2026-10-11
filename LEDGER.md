@@ -4,6 +4,34 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
+- [x] Page font requests followed redirects to any host (no `redirectLimit`, Unity's default 32),
+      so `PageFontHosts` bounded only the link as written. Fixed by refusing redirects on page
+      requests; watched both ways in game 2026-10-11 with a local server on `localhost` (allowed
+      for the test) answering 302 to `127.0.0.1` (not allowed): before, the second host served the
+      file and it was saved; after, `Redirect limit exceeded` and the second host never contacted.
+      Google Fonts measured serving 200 with no redirects; a real uncached Google link still loads.
+- [ ] **Owner decision:** page requests accept plain `http`, and Google serves `http://` fonts and
+      stylesheets with 200 and no upgrade (measured 2026-10-11), so a page's font bytes can travel
+      unencrypted to native FreeType. Recommendation: https only for page requests; `FontUrls`
+      unchanged. Counter-case: a player listing a LAN http host.
+- [ ] **Owner decision:** `fonts/downloaded` sits inside the player's folder, which is scanned
+      before the bundled fonts, so a face a page once downloaded claims its name ahead of a bundled
+      one in every later session (the same session, it loses the clash). The player-wins rule was
+      meant for the player's own files. Recommendation: scan `fonts/downloaded` after the bundled
+      fonts.
+- [ ] **Download misnamed:** a copy of bundled Barlow-Regular with every family record renamed to
+      "RedirectProbe" (same byte length, 98,812) was saved as `Barlow-Regular.ttf` and logged as
+      "Barlow Regular": `FontEngine.LoadFontFace(byte[])` then `GetFaceInfo()` in
+      `FontDownloader.Save` reported a face other than the bytes held. Same overload as the
+      glyphless-face fault. Real downloads so far were named correctly. Cause unknown; candidate
+      fixes: name the file from its own name table, or load through a temporary path.
+- [ ] After the next game close, check `PageFontHosts` in the config still reads the default: it
+      was restored on disk while the game ran with `localhost` added in memory.
+
+- [x] Probed the game faces' SDF constants for the console builder (2026-10-11): `font_english`
+      pointSize 147, gradientScale 11, ratio 0.9091, normal weight -0.6, no dilate or outline.
+      Still unobserved: an outlined label's live ratio, since nothing drew an outline that session.
+
 - [x] Version cut to **0.4.0** in both hand-maintained places (`ScriptedScreensFonts.csproj`,
       which generates `PLUGIN_VERSION_CONST`, and `About/About.xml`) with a workshop
       "What's new in 0.4.0" section. 0.4.0 and not 0.3.1 because `FontApi.Registrations` is a

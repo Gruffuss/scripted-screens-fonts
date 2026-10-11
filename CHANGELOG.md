@@ -4,6 +4,12 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## 0.4.0
 
+- Fixed: a page's font link could be redirected to a host `PageFontHosts` never allowed. The list
+  was checked against the link as written, but the download then followed up to 32 redirects
+  wherever they led, so an allowed host could pass the request on and the font's bytes, which
+  native code parses, arrived from somewhere else. Page requests now refuse redirects. Google
+  Fonts serves its stylesheets and files without them, so nothing that worked stops working; your
+  own `FontUrls` links may still redirect.
 - Corrected in the docs: the 48-faces-per-session cap on page font requests was described as a
   texture-memory bound of about 1 MB a face. That stopped being true in 0.3.0, when faces became
   dynamic -- an undrawn face costs no texture. The cap bounds how much untrusted font data a page
