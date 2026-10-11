@@ -4,6 +4,11 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
+- [x] Version cut to **0.4.0** in both hand-maintained places (`ScriptedScreensFonts.csproj`,
+      which generates `PLUGIN_VERSION_CONST`, and `About/About.xml`) with a workshop
+      "What's new in 0.4.0" section. 0.4.0 and not 0.3.1 because `FontApi.Registrations` is a
+      new public member. Cut, not published: publishing is done from in game.
+
 - [x] `FontApi.Registrations` **seen in game** 2026-10-11, with the vector mod 0.11.112: an
       element naming Bangers and declaring no font link switched to it on arrival, with no
       re-push, driven by the counter alone. The vector mod reads it through a delegate off

@@ -2,7 +2,7 @@
 <ModMetadata xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<Name>ScriptedScreens Fonts [StationeersLaunchPad]</Name>
 	<Author>Gruffuss</Author>
-	<Version>0.3.0.0</Version>
+	<Version>0.4.0.0</Version>
 	<Description>
 [h1]ScriptedScreens Fonts[/h1]
 [i]Real typefaces on ScriptedScreens consoles. Client-side only.[/i]
@@ -24,6 +24,18 @@ Use the game's own fonts and any .ttf or .otf file by name in a ScriptedScreens 
 
 [h2]Getting started[/h2]
 The mod folder holds four examples that run on paste, a quick start (QUICKSTART.md), a guide (README.md) and the release history (CHANGELOG.md), also [url=https://github.com/Gruffuss/scripted-screens-fonts]on GitHub[/url]. Every available font name is written to BepInEx/LogOutput.log. With StationeersLua's MCP server on, AI editors can read the same docs and the live font list.
+
+[h2]What's new in 0.4.0[/h2]
+[list]
+[*] [b]A page asking for too many fonts no longer downloads them anyway.[/b] A console page may
+bring in up to 48 font faces; past that, further links are now refused before the file is
+fetched rather than after, so a page that asks for more does not make every player download
+fonts none of them can use.
+[*] Mods can watch [b]FontApi.Registrations[/b] to see when a new face has arrived, so a page
+that fell back to another font can redraw itself as soon as the one it asked for is ready.
+[*] Documentation fixes: the font face limit was described as a memory limit, which it stopped
+being when faces became load-on-demand in 0.3.0.
+[/list]
 
 [h2]What's new in 0.3.0[/h2]
 [list]

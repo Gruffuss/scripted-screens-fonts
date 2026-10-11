@@ -2,7 +2,7 @@
 
 Newest first. The workshop page carries only the latest releases; this file has all of them.
 
-## Unreleased
+## 0.4.0
 
 - Corrected in the docs: the 48-faces-per-session cap on page font requests was described as a
   texture-memory bound of about 1 MB a face. That stopped being true in 0.3.0, when faces became
