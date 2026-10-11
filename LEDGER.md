@@ -4,6 +4,24 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
+- [x] **Byte-loaded fonts fixed.** Measured twice, in separate game sessions, with renamed and
+      padded copies of Barlow: given bytes of a length it had already loaded, `FontEngine` returns
+      the face it already holds -- glyphless, and named after the earlier font -- so a renamed copy
+      of Barlow-Regular (same length) was saved as `Barlow-Regular.ttf`. A never-seen length
+      loaded properly; every path load was correct. `BuildFace` now opens faces by path, and
+      downloads are named by reading the name table (`FontLoader.TryReadName`, checked offline
+      against nine cases including the misnamed file). In game: all 50 file faces register with
+      identical names, kerning counts and source files, weights identical, a real download is
+      named and drawn correctly.
+- [ ] **Owner decision: every loaded font file stays locked while the game runs** (measured on the
+      path-loading build: a bundled, a downloaded and a player's own file, none ever drawn, all
+      "Device or resource busy"). Before, by the code, only files a face had drawn from were held
+      open. Options: accept it (documented in README and CHANGELOG), or open private temporary
+      copies so the player's files stay free.
+- [ ] A test download, `fonts/downloaded/Audiowide-Regular.ttf`, is left in the cache (held open
+      while the game runs). At the next game close: delete it, its `sources.txt` line and its
+      config section -- or keep it, it is an ordinary Google font.
+
 - [x] Page font requests followed redirects to any host (no `redirectLimit`, Unity's default 32),
       so `PageFontHosts` bounded only the link as written. Fixed by refusing redirects on page
       requests; watched both ways in game 2026-10-11 with a local server on `localhost` (allowed

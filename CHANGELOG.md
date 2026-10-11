@@ -4,6 +4,12 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## 0.4.0
 
+- Fixed: fonts are always opened from their file now. Opened from memory, the engine could hand
+  back a font it already held whenever the new one had the same length -- with no characters in
+  it, and under the other font's name -- so a downloaded file could be saved as a different font.
+  Downloads are now named from the font's own name table. Every font registers as before, with the
+  same names, kerning and weights. **While the game runs it keeps every font file it loaded open:
+  close the game before replacing or deleting one.** Adding new files is fine.
 - A page's font links must be https. Google Fonts serves plain http too, with no upgrade, so an
   http link carried a font file -- which native code parses -- in the clear, where anything on the
   way could replace it. Your own `FontUrls` links may still be http.

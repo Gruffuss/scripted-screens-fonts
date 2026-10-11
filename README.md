@@ -102,6 +102,9 @@ family taken from the file name up to its first `-`. A disabled file is never
 built, so it costs no memory. Use this to keep a whole family in the folder but load only the
 weights you use.
 
+**Close the game before replacing or deleting a font file**: while it runs, the game keeps every
+font file it loaded open, so Windows refuses. Adding a new file is fine.
+
 **A restart is required** after adding a file or changing a toggle. Faces are built once,
 shortly after the game's TMP resources come up, and there is no rescan. Their atlases start
 empty and fill as characters are drawn, so building a face is not what costs.

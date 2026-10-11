@@ -208,16 +208,17 @@ internal static class FontDownloader
     {
         try
         {
-            FontEngine.InitializeFontEngine();
-            if (FontEngine.LoadFontFace(bytes, 48) != FontEngineError.Success)
+            // Named from the font's own name table, never through FontEngine's byte overload, which
+            // reported a face it already held: a renamed copy of Barlow-Regular was saved as
+            // Barlow-Regular.ttf (seen 2026-10-11). See FontLoader.TryReadName.
+            if (!FontLoader.TryReadName(bytes, out var named, out var namedStyle))
             {
-                ScriptedScreensFontsPlugin.Log?.LogWarning($"{url} is not a font file the engine can read (use a .ttf or .otf link; WOFF2 is not read).");
+                ScriptedScreensFontsPlugin.Log?.LogWarning($"{url} is not a font file the engine can read (use a .ttf or .otf link; WOFF and WOFF2 are not read).");
                 return;
             }
 
-            var face = FontEngine.GetFaceInfo();
-            var family = string.IsNullOrEmpty(face.familyName) ? Path.GetFileNameWithoutExtension(url.AbsolutePath) : face.familyName;
-            var style = string.IsNullOrEmpty(face.styleName) ? "Regular" : face.styleName;
+            var family = string.IsNullOrEmpty(named) ? Path.GetFileNameWithoutExtension(url.AbsolutePath) : named;
+            var style = string.IsNullOrEmpty(namedStyle) ? "Regular" : namedStyle;
             var extension = url.AbsolutePath.EndsWith(".otf", StringComparison.OrdinalIgnoreCase) ? ".otf" : ".ttf";
             var file = SafeFileName(family + "-" + style) + extension;
             var path = Path.Combine(folder, file);

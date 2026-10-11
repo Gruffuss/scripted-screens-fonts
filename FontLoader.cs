@@ -25,11 +25,19 @@ namespace ScriptedScreensFonts;
 /// <c>DynamicOS</c> atlas mode in this TMP version to fall back on either.
 /// </para>
 /// <para>
-/// <c>FontEngine.LoadFontFace(byte[])</c> has no such restriction, so the face is read
-/// straight from the file and the asset assembled by hand, mirroring what
-/// <c>TMP_FontAsset.TryAddCharacters</c> does. The consequence is a <b>static</b> atlas:
-/// glyphs are rendered once at load and nothing can be added afterwards, because "afterwards"
-/// would need the <c>Font</c> we do not have. Hence a fixed character set.
+/// So the face is opened straight from the file, <c>FontEngine.LoadFontFace(path, ...)</c>, and
+/// the asset assembled by hand, mirroring what <c>TMP_FontAsset.TryAddCharacters</c> does. The
+/// atlas starts empty and grows as characters are drawn: <see cref="DynamicAtlas"/> redirects
+/// TMP's growth to the same file.
+/// </para>
+/// <para>
+/// <b>Never the byte-array overload.</b> Measured on 2026-10-11, the same way in two separate game
+/// sessions: given bytes of a length it had already loaded, the engine hands back the face it
+/// already holds -- one that answers no glyph lookups, named after the earlier font. A copy of
+/// Barlow-Regular with every family name changed, same length, reported itself as "Barlow" each
+/// time; real Barlow, Pacifico and Barlow Condensed Bold, all already loaded, came back glyphless.
+/// The same renamed bytes plus four trailing zeros, a length never seen, gave their own name and
+/// their glyphs. Every path load answered correctly.
 /// </para>
 /// </remarks>
 internal static class FontLoader
@@ -498,7 +506,13 @@ internal static class FontLoader
 
         var file = Path.GetFileName(path);
 
-        if (FontEngine.LoadFontFace(sourceBytes, SamplingPointSize, faceIndex) != FontEngineError.Success)
+        // From the file, never from bytes (see the class remarks): the byte overload can hand back
+        // a face it already holds, with no glyphs and possibly another font's names, metrics and
+        // kerning. Same form as DynamicAtlas, which grows this face from the same file later.
+        var loaded = faceIndex == 0
+            ? FontEngine.LoadFontFace(path, SamplingPointSize)
+            : FontEngine.LoadFontFace(path, SamplingPointSize, faceIndex);
+        if (loaded != FontEngineError.Success)
         {
             ScriptedScreensFontsPlugin.Log?.LogWarning($"\"{file}\" is not a font file the engine can read.");
             return null;
@@ -836,6 +850,100 @@ internal static class FontLoader
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// The family and style a font file names itself with, read from its own name table, for
+    /// naming a downloaded file before it exists on disk. False when the bytes are not a font this
+    /// engine reads: TrueType, OpenType or a collection, never WOFF/WOFF2.
+    /// </summary>
+    /// <remarks>
+    /// Not through FontEngine: its byte overload reports a face it already holds rather than the
+    /// one given (see the class remarks), and opening a temporary file instead would leave it open
+    /// and locked. This only names the cache file -- the name a face is registered under still
+    /// comes from FontEngine, from the file, in BuildFace -- so it follows the rule measured there
+    /// (typographic names 16/17 when present, else 1/2, per field) and prefers a Windows English
+    /// record, then any Windows, then Unicode, then Mac Roman English.
+    /// </remarks>
+    internal static bool TryReadName(byte[] font, out string family, out string style)
+    {
+        family = style = string.Empty;
+        try
+        {
+            if (font.Length < 12)
+                return false;
+
+            var directory = 0;
+            var tag = ReadUInt32(font, 0);
+            if (tag == 0x74746366u)   // 'ttcf': the first font of a collection
+            {
+                directory = (int)ReadUInt32(font, 12);
+                tag = ReadUInt32(font, directory);
+            }
+
+            if (tag != 0x00010000u && tag != 0x4F54544Fu && tag != 0x74727565u)   // 1.0, 'OTTO', 'true'
+                return false;
+
+            var table = -1;
+            var tables = ReadUInt16(font, directory + 4);
+            for (var i = 0; i < tables; i++)
+            {
+                var record = directory + 12 + (i * 16);
+                if (ReadUInt32(font, record) == 0x6E616D65u)   // 'name'
+                    table = (int)ReadUInt32(font, record + 8);
+            }
+
+            if (table < 0)
+                return false;
+
+            var count = ReadUInt16(font, table + 2);
+            var storage = table + ReadUInt16(font, table + 4);
+
+            string? Name(int nameId)
+            {
+                var best = -1;
+                var bestRank = int.MaxValue;
+                for (var i = 0; i < count; i++)
+                {
+                    var r = table + 6 + (i * 12);
+                    if (ReadUInt16(font, r + 6) != nameId)
+                        continue;
+
+                    var platform = ReadUInt16(font, r);
+                    var encoding = ReadUInt16(font, r + 2);
+                    var language = ReadUInt16(font, r + 4);
+                    var rank = platform == 3 && (encoding == 1 || encoding == 10)
+                        ? (language == 0x0409 ? 0 : (language & 0x3FF) == 0x09 ? 1 : 2)
+                        : platform == 0 ? 3
+                        : platform == 1 && encoding == 0 && language == 0 ? 4
+                        : int.MaxValue;
+                    if (rank < bestRank)
+                    {
+                        bestRank = rank;
+                        best = r;
+                    }
+                }
+
+                if (best < 0)
+                    return null;
+
+                var length = ReadUInt16(font, best + 8);
+                var start = storage + ReadUInt16(font, best + 10);
+                var text = ReadUInt16(font, best) == 1
+                    ? System.Text.Encoding.ASCII.GetString(font, start, length)
+                    : System.Text.Encoding.BigEndianUnicode.GetString(font, start, length);
+                return string.IsNullOrWhiteSpace(text) ? null : text.Trim();
+            }
+
+            family = Name(16) ?? Name(1) ?? string.Empty;
+            style = Name(17) ?? Name(2) ?? string.Empty;
+            return true;
+        }
+        catch (Exception ex) when (ex is IndexOutOfRangeException or ArgumentException)
+        {
+            // Truncated or malformed: not a font this engine reads.
+            return false;
+        }
     }
 
     private static int ReadUInt16(byte[] data, int offset) => (data[offset] << 8) | data[offset + 1];
