@@ -50,7 +50,8 @@ label("tags", 184, 34,
     '<font="Barlow Condensed"><cspace=0.12em>OXYGEN</cspace> <size=130%><color=#34D399>21.0</color></size> %</font>',
     24, "#E4F1F7")
 
--- Symbols every loaded face gets, if the font file has them: true minus, en dash, degree, approx
+-- Symbols, in the face if its file has them (TextMeshPro substitutes any it lacks): true minus,
+-- en dash, degree, approx
 label("symbols", 228, 26,
     '<font="Barlow">\226\136\146 12.5 \194\176C \226\128\147 \226\137\136 0.4 kPa</font>',
     18, "#E4F1F7")

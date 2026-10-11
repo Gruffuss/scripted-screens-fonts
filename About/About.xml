@@ -15,11 +15,7 @@ Use the game's own fonts and any .ttf or .otf file by name in a ScriptedScreens 
 [*] [b]&lt;b&gt;, &lt;i&gt; and &lt;font-weight&gt; draw the family's real faces[/b], not a thickened or slanted fake
 [*] Text is kerned, from the font's own pair data
 [*] Ships the Barlow and Barlow Condensed families, every weight with italics
-[*] Add your own fonts: drop files into [b]Documents/My Games/Stationeers/fonts[/b]
-[*] Or download them by link, Google Fonts out of the box
-[*] A variable font gives you every one of its named instances
-[*] Names come from the font itself: Barlow-Bold.ttf is &lt;font="Barlow Bold"&gt;
-[*] An on/off switch per font file in the mod settings
+[*] Add your own fonts in [b]Documents/My Games/Stationeers/fonts[/b], or download them by link, Google Fonts out of the box
 [/list]
 
 [h2]Getting started[/h2]
@@ -27,29 +23,9 @@ The mod folder holds four examples that run on paste, a quick start (QUICKSTART.
 
 [h2]What's new in 0.4.0[/h2]
 [list]
-[*] [b]Page font links are safer.[/b] They must be https, and can no longer be redirected to a site
-you have not allowed: the allowed-sites setting was checked against the link as written, not
-against where the download ended up.
-[*] A font a page once downloaded can no longer take the name of a font the mod ships. Your own
-fonts still can.
-[*] [b]A page asking for too many fonts no longer downloads them anyway.[/b] A console page may
-bring in up to 48 font faces; past that, further links are now refused before the file is
-fetched rather than after, so a page that asks for more does not make every player download
-fonts none of them can use.
-[*] Mods can watch [b]FontApi.Registrations[/b] to see when a new face has arrived, so a page
-that fell back to another font can redraw itself as soon as the one it asked for is ready.
-[*] Documentation fixes: the font face limit was described as a memory limit, which it stopped
-being when faces became load-on-demand in 0.3.0.
-[/list]
-
-[h2]What's new in 0.3.0[/h2]
-[list]
-[*] [b]The whole typeface.[/b] A font is no longer cut down to a fixed set of characters: every glyph in the file is available, rendered the first time it is drawn. Barlow carries 525 characters and all of them work.
-[*] [b]Real weights and italics.[/b] &lt;font="Barlow"&gt;&lt;b&gt;text&lt;/b&gt; now draws the actual Barlow Bold, identical to naming it, instead of TextMeshPro thickening the regular. Same for &lt;i&gt; and &lt;font-weight=N&gt;.
-[*] [b]Kerning.[/b] Letter pairs are spaced as the designer drew them, so AV and To tuck together the way they do in a browser.
-[*] [b]Downloads.[/b] Put Google Fonts links in the FontUrls setting and they are fetched once and kept. Other mods can request one at runtime, limited to hosts you allow.
-[*] [b]Variable fonts[/b] expand into all of their named instances.
-[*] Uses less memory than before: a font you never draw with costs no texture at all.
+[*] [b]Safer page fonts.[/b] A page's font links must be https and can no longer be redirected to a site you have not allowed, and a page over its 48-font limit is refused before anything downloads.
+[*] [b]More reliable loading.[/b] Fonts always load from their file, fixing a case where a downloaded font was saved under another font's name. Close the game before replacing or deleting a font file.
+[*] A font a page downloaded can no longer replace one the mod ships, and other mods can now tell when a font arrives late, so a page can redraw in it without a re-push.
 [/list]
 Full history: [url=https://github.com/Gruffuss/scripted-screens-fonts/blob/main/CHANGELOG.md]CHANGELOG.md[/url].
 

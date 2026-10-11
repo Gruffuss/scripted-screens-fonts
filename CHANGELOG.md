@@ -5,9 +5,10 @@ Newest first. The workshop page carries only the latest releases; this file has 
 ## 0.4.0
 
 - Fixed: fonts are always opened from their file now. Opened from memory, the engine could hand
-  back a font it already held whenever the new one had the same length -- with no characters in
-  it, and under the other font's name -- so a downloaded file could be saved as a different font.
-  Downloads are now named from the font's own name table. Every font registers as before, with the
+  back a font it already held instead of the one given -- with no characters in it, and under the
+  other font's name: a renamed copy of bundled Barlow, the same size, came back as Barlow every
+  time, so a downloaded file could be saved as a different font. Downloads are now named from the
+  font's own name table, and only TrueType and OpenType files are kept (WOFF and WOFF2 are not). Every font registers as before, with the
   same names, kerning and weights. **While the game runs it keeps every font file it loaded open:
   close the game before replacing or deleting one.** Adding new files is fine.
 - A page's font links must be https. Google Fonts serves plain http too, with no upgrade, so an
@@ -23,6 +24,13 @@ Newest first. The workshop page carries only the latest releases; this file has 
   native code parses, arrived from somewhere else. Page requests now refuse redirects. Google
   Fonts serves its stylesheets and files without them, so nothing that worked stops working; your
   own `FontUrls` links may still redirect.
+- Corrected in the docs: a missing bold or italic face is stood in for by TextMeshPro, thickened or
+  slanted, not left unstyled (only a `<font-weight=N>` with no face draws unchanged), and
+  `<font="Barlow Bold"><i>` draws Barlow Italic, the bold lost. A name nothing is registered under
+  prints its tag literally; the default typeface means the face resolved but lacks those
+  characters. `FontUrls` links are separated by spaces only, a variable font file gives every named
+  instance, and the config sections are named as the settings show them. The README now documents
+  `RequestFontWithReason` and `Registrations`.
 - Corrected in the docs: the 48-faces-per-session cap on page font requests was described as a
   texture-memory bound of about 1 MB a face. That stopped being true in 0.3.0, when faces became
   dynamic -- an undrawn face costs no texture. The cap bounds how much untrusted font data a page

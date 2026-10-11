@@ -87,8 +87,9 @@ internal static class FontsDocsTool
         }
 
         Add("charset", "Characters a font can draw",
-            "The exact set of codepoints every font is built with, and which of them each "
-            + "loaded face turns out not to have. Read this to know whether a character draws.",
+            "A common set of codepoints used as a yardstick, and which of them each loaded face "
+            + "does not have. Every character in a font file can be drawn; read this to know in "
+            + "advance whether a particular one will.",
             Charset);
 
         const string AvailableName = "Fonts available now";
@@ -138,10 +139,9 @@ internal static class FontsDocsTool
         ScriptedScreensFontsPlugin.Log?.LogInfo($"registered {count + 1} fonts documentation resources and the examples");
     }
 
-    /// <summary>The live font list, read on every request.</summary>
     /// <summary>
-    /// The requested set, exactly, plus each face's gaps. Written for a tool that wants to warn
-    /// about a character before it is drawn, so it states ranges rather than prose.
+    /// The common set used as a yardstick, exactly, plus each face's gaps in it. Written for a tool
+    /// that wants to warn about a character before it is drawn, so it states ranges rather than prose.
     /// </summary>
     private static string Charset()
     {
@@ -173,11 +173,11 @@ internal static class FontsDocsTool
             text.Append("### ").Append(face.Key).Append("\n\n");
             if (face.Value.Length == 0)
             {
-                text.Append("Draws every requested character.\n\n");
+                text.Append("Has every character of the common set.\n\n");
                 continue;
             }
 
-            text.Append(face.Value.Length).Append(" requested characters do not draw:\n\n```\n");
+            text.Append(face.Value.Length).Append(" characters of the common set are not in this face (TextMeshPro draws them from another):\n\n```\n");
             AppendCodepoints(text, face.Value);
             text.Append("```\n\n");
         }
@@ -199,12 +199,13 @@ internal static class FontsDocsTool
             text.Append('\n');
     }
 
+    /// <summary>The live font list, read on every request.</summary>
     private static string Available()
     {
         var fonts = FontRegistry.Snapshot();
         var text = new StringBuilder("# Fonts available now\n\n");
         text.Append("Use a name exactly as written, case included: `<font=\"Name\">` inside a label's `text`.\n");
-        text.Append("A font file's glyph coverage is its own: a character it lacks does not render.\n\n");
+        text.Append("A font file's glyph coverage is its own: a character it lacks is drawn by TextMeshPro's own fallback, in another face.\n\n");
 
         if (fonts.Count == 0)
             text.Append("Nothing registered yet. Game fonts appear once a world is loading; font files once TextMeshPro's shaders are up.\n");

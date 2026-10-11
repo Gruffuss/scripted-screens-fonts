@@ -23,8 +23,9 @@ namespace ScriptedScreensFonts;
 /// way into font parsers. So a page may only download from the hosts in the
 /// <c>PageFontHosts</c> setting, and the default is Google Fonts alone: it serves only Google's
 /// own curated files, where a general CDN such as jsDelivr serves anything from any GitHub repo.
-/// A stylesheet's font links must pass the same check. Links in <c>FontUrls</c> are the
-/// player's own choice and are not limited.
+/// A stylesheet's font links must pass the same check. Only https is accepted and a redirect is
+/// refused, so the host list vouches for where the bytes actually come from. Links in
+/// <c>FontUrls</c> are the player's own choice and are not limited.
 /// </para>
 /// <para>
 /// Files land in the same <c>fonts/downloaded</c> cache as <c>FontUrls</c>, so a page's font is
@@ -103,10 +104,11 @@ public static class FontApi
 
     /// <summary>
     /// As <see cref="RequestFont"/>, but the callback is also told why it got nothing: an empty
-    /// string on success, else <c>download-failed</c> (the file could not be fetched),
-    /// <c>disabled</c> (the player switched that font off), <c>face-limit</c> (this session has
-    /// already built its maximum of page faces), <c>load-failed</c> (the file arrived but is not
-    /// a font this engine reads), or <c>loader-unavailable</c> (the font loader never became
+    /// string on success, else <c>download-failed</c> (nothing usable arrived: the fetch failed, was
+    /// redirected, or brought something other than a TrueType or OpenType font),
+    /// <c>disabled</c> (the player switched that font off), <c>face-limit</c> (this session's page
+    /// faces, counting downloads still in flight, are at the maximum), <c>load-failed</c> (the file
+    /// arrived but the engine could not open it), or <c>loader-unavailable</c> (the font loader never became
     /// ready). A caller that only draws text can ignore it; one that reports to a player on a
     /// console cannot, because they cannot read the log.
     /// </summary>

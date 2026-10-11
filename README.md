@@ -19,10 +19,10 @@ No game files are modified and ScriptedScreens is not patched. There is no Lua A
 mutates global TMP state at load, so the main thing that changes is that `<font="X">` resolves
 names it previously rejected.
 
-It does patch TextMeshPro, in one narrow place: two Harmony prefixes let a font built from a
-file rasterise a glyph on demand, which TMP otherwise only does for fonts imported in the
-editor. The engine prefix is inert unless one of this mod's own faces is growing, so the game's
-fonts take the untouched path.
+It does patch TextMeshPro, in one narrow place: two Harmony patches, one on TextMeshPro's glyph
+growth and one on Unity's font engine, let a font built from a file rasterise a glyph on demand,
+which TMP otherwise only does for fonts imported in the editor. The engine patch is inert unless
+one of this mod's own faces is growing, so the game's fonts take the untouched path.
 
 ## Using a font
 
@@ -43,14 +43,18 @@ ScriptedScreens enables rich text on every label unless the string contains `<no
 nothing needs switching on. The other TMP tags (`<size>`, `<color>`, `<cspace>`) work alongside
 it, and **`<b>`, `<i>` and `<font-weight=N>` pick the family's real faces** when it ships them —
 `<font="Barlow"><b>text</b>` draws exactly the same as `<font="Barlow Bold">text`, rather than
-TextMeshPro thickening or slanting the regular. A weight the family does not have is left
-unstyled. Text is also kerned, from the font's own pair data.
+TextMeshPro thickening or slanting the regular. Where the family has no such face, TextMeshPro's
+own stand-in applies: `<b>` thickens the face in use and `<i>` slants it, while a
+`<font-weight=N>` with no matching face draws the face unchanged. Combine through the family, not
+a weight's name: `<font="Barlow"><b><i>` draws Barlow Bold Italic, but `<font="Barlow Bold"><i>`
+draws Barlow Italic -- naming the bold face does not make the italic bold. Text is also kerned,
+from the font's own pair data.
 
 **Names are case sensitive.** Take them from `BepInEx/LogOutput.log`, which lists every one
 on load:
 
 ```
-Font available: <font="Barlow Condensed SemiBold"> (212 characters from BarlowCondensed-SemiBold.ttf)
+Font available: <font="Barlow Condensed SemiBold"> (every character in the file, built as it is first drawn, 9288 kerning pairs from BarlowCondensed-SemiBold.ttf)
 ```
 
 Reading a wrong result:
@@ -58,15 +62,16 @@ Reading a wrong result:
 | what you see | what happened |
 |---|---|
 | the right typeface | the tag resolved |
-| the default typeface | the font is not loaded: switched off in the config, or not registered yet |
-| a literal `<font="X">` | TMP rejected the tag; the name is wrong (case, or a file name used as a font name) |
+| a literal `<font="X">` | nothing is registered under that name, so TMP rejected the tag: wrong case, a file name used as a font name, a file switched off in the config, or a font not registered yet |
+| the default typeface | the name resolved, but that face has none of these characters, so TMP drew each from its own fallback (a symbol font asked for letters, for example) |
 
 `examples/03-name-check.lua` renders a list of names one row each, which makes all three
 visible at a glance.
 
-The [ScriptedScreens Html](https://github.com/Gruffuss/scripted-screens-html) mod takes the
-same names in CSS `font-family`: it lays pages out with exactly the fonts this mod registers,
-so a font you add here is available to pages too.
+[ScriptedScreens Vector](https://github.com/Gruffuss/scripted-screens-vector) takes the same
+names in a `T` label's `font=` and in `<font>` tags inside its text, and the
+[ScriptedScreens Html](https://github.com/Gruffuss/scripted-screens-html) mod takes them in CSS
+`font-family`, so a font you add here is available to their pages too.
 
 ## Adding your own fonts
 
@@ -96,9 +101,10 @@ Regular:
 | `BarlowCondensed-SemiBoldItalic.ttf` | `<font="Barlow Condensed SemiBold Italic">` |
 
 **Every file gets an on/off toggle** in the mod config (LaunchPad's settings UI), grouped
-into one section per folder, subfolder and family — `Your fonts: Manrope`,
-`Your fonts: GasUi/Manrope` for yours, `Font files: Barlow` for the bundled ones — with the
-family taken from the file name up to its first `-`. A disabled file is never
+into one section per folder, subfolder and family — `Your fonts (restart to apply): Manrope`,
+`Your fonts (restart to apply): GasUi/Manrope` for yours,
+`Included fonts (restart to apply): Barlow` for the bundled ones — with the family taken from the
+file name up to its first `-`. A disabled file is never
 built, so it costs no memory. Use this to keep a whole family in the folder but load only the
 weights you use.
 
@@ -117,7 +123,7 @@ carries the licence in nameID 13. Barlow's `OFL.txt` sits next to the bundled Ba
 ## Downloading fonts
 
 Instead of copying files, list links in **`FontUrls`** in the mod settings, separated by spaces
-or commas. Two kinds work:
+-- not commas, which a Google Fonts link contains itself. Two kinds work:
 
 - a direct link to a `.ttf` or `.otf` file
 - a Google Fonts stylesheet link, which brings every weight it names:
@@ -129,13 +135,15 @@ fonts and needs no network. A font downloaded this launch is usable this launch;
 switch appears after the next restart. Removing a link does not delete its files; delete them
 from that folder.
 
-Variable fonts work through Google: it sends one ordinary file per weight you list. A
-variable `.ttf` linked directly loads only its default weight. WOFF2 files are not read.
+Variable fonts work through Google: it sends one ordinary file per weight you list, and a range
+such as `wght@100..900` brings one file for every weight in it. A variable `.ttf` linked directly,
+or dropped in your folder, gives each of its named instances under its own name
+(`<font="Cascadia Code SemiBold">`). WOFF and WOFF2 files are not read.
 
 ### Fonts requested by a page
 
-Other mods can ask for a font at runtime — ScriptedScreens Html does it for a page's
-`@font-face { src: url(...) }`. A page is written by whoever built the console, and in
+Other mods can ask for a font at runtime — ScriptedScreens Vector does it for a scene's `FONT`
+link, and ScriptedScreens Html for a page's `@font-face { src: url(...) }`. A page is written by whoever built the console, and in
 multiplayer its source reaches every player, while a font file is read by native code. So a
 page may only download from the hosts in **`PageFontHosts`**, which defaults to Google Fonts
 alone (`fonts.googleapis.com fonts.gstatic.com`): Google serves only its own curated files,
@@ -145,8 +153,9 @@ list can only vouch for where the bytes actually come from. Empty refuses every 
 setting applies at once.
 
 Page fonts use the same `fonts/downloaded` cache, so each downloads once. A font you have
-switched off stays off, and a session builds at most 48 page font faces. The cap is on how many
-faces a page may bring in, not on memory: a face costs only the glyphs something actually draws.
+switched off stays off, and a session builds at most 48 page font faces, checked before anything
+is downloaded. The cap is on how many faces pages may bring in, not on memory: a face costs only
+the glyphs something actually draws.
 
 For mod authors, the call, by reflection so neither mod needs the other to build:
 
@@ -157,6 +166,16 @@ api?.GetMethod("RequestFont")?.Invoke(null, new object[] { link, (Action<string[
 
 It returns `false` when the link is refused (the reason is logged) and otherwise calls back
 once, on the main thread, with the names the fonts are available under.
+
+`RequestFontWithReason(link, Action<string[], string>)` is the same call, and also tells the
+callback why it got nothing: an empty string on success, else `download-failed`, `disabled`,
+`face-limit`, `load-failed` or `loader-unavailable`. Look it up by its own name; it is never an
+overload of `RequestFont`, so `GetMethod("RequestFont")` stays unambiguous.
+
+`FontApi.Registrations`, a property, counts the font faces registered this session by every
+route, the game's own included, and only ever increases. A mod that keeps a laid-out page can
+compare it with the value it held at layout time to learn that a font has arrived since -- a
+label that was drawn before its font existed does not redraw by itself.
 
 ## Character set
 
@@ -247,7 +266,7 @@ Every deploy `Copy` is `ContinueOnError`, so a wrong `StationeersDocumentsDirect
 silently and presents as the mod not working. If a build succeeds but nothing changes in
 game, check that path first.
 
-`dotnet build ScriptedScreensFonts.csproj` deploys to
+`dotnet build ScriptedScreensFonts.csproj -c Release` deploys to
 `My Games\Stationeers\mods\ScriptedScreensFonts\`.
 
 The build publicises `Unity.TextMeshPro` and `UnityEngine.TextCoreFontEngineModule` via

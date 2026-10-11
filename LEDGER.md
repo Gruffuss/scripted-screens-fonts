@@ -4,6 +4,19 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
+- [ ] **Before publishing 0.4.0, two checks need one game restart** (held 2026-10-11: another session
+      was using the game). (1) A variable font still gives every named instance now that faces open
+      by path: copy Windows' `CascadiaCode.ttf` (6 instances) into the player's fonts folder,
+      restart, expect six distinct `Cascadia Code ...` faces and six visibly different weights on
+      a console. It worked on the byte loader (an earlier log); every instance shares one path, so
+      a path-keyed cache could hand back one face six times -- if so it is a code fix, not a doc
+      fix. (2) The MCP resources show the corrected text (the `charset` description, the
+      `available` fallback line). Then remove the test font and Audiowide at the next game close.
+- [x] Docs audited for the 0.4.0 publish (2026-10-11): README, QUICKSTART, CHANGELOG, About.xml,
+      the MCP text in `FontsDocsTool`, the `FontApi` doc comments and the examples, every claim checked
+      against the code or a measurement; links, versions, the shipped file list and the DLL
+      (no local paths, no LaunchPad reference) verified; the four examples run on a console.
+
 - [x] **Byte-loaded fonts fixed.** Measured twice, in separate game sessions, with renamed and
       padded copies of Barlow: given bytes of a length it had already loaded, `FontEngine` returns
       the face it already holds -- glyphless, and named after the earlier font -- so a renamed copy

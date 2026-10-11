@@ -10,7 +10,8 @@ ScriptedScreens `label`. It registers the game's own font assets, and builds fon
 `Documents/My Games/Stationeers/fonts`. There is no Lua API: the only change is
 that `<font="Name">` inside a label's text now resolves.
 
-The ScriptedScreens Html mod uses the same names in CSS `font-family`.
+ScriptedScreens Vector takes the same names in a `T` label's `font=` and in `<font>` tags; the
+ScriptedScreens Html mod takes them in CSS `font-family`.
 
 ## Workflow
 
@@ -59,8 +60,9 @@ end
 - **A file's font name is not its file name.** `Barlow-Regular.ttf` is `Barlow`;
   `BarlowCondensed-SemiBold.ttf` is `Barlow Condensed SemiBold`. The name is the font's own
   family, plus its style when that is not Regular.
-- **`stationeers://fonts/charset` is the exact answer** to "will this character draw": the full
-  requested set, and the codepoints each loaded face is missing. Prefer it to the summary below.
+- **`stationeers://fonts/charset` is the exact answer** to "will this character draw": a common
+  set of characters used as a yardstick, and which of them each loaded face lacks. Prefer it to
+  the summary below.
 - **Every character a font file contains can be drawn**, built the first time it is drawn, so
   there is no character set to stay inside. What a face does *not* contain still matters: Barlow
   has no arrows, shapes or box drawing at all, and subscript digits are rare, so write `CO2`.
@@ -75,18 +77,23 @@ end
   logging an error every frame in a label.
 - **Loaded fonts are kerned** (from the font's GPOS table), so a line of text draws slightly
   narrower than the sum of its characters' widths. Anything measuring text by adding up glyph
-  advances will over-estimate. The `Kerning` setting turns it off. Most of the game's own faces
-  kern too, from pairs baked into them when they were made; `stationeers://fonts/available`
+  advances will over-estimate. The `Kerning` setting turns it off. Many of the game's own faces,
+  the default one among them, kern too, from pairs baked into them when they were made; `stationeers://fonts/available`
   gives the pair count for every font, so a face that does not kern is visible there.
 - **`<b>`, `<i>` and `<font-weight=N>` pick the family's real faces** when it ships them, so
-  `<font="Barlow"><b>text</b>` equals `<font="Barlow Bold">text` exactly. A weight the family does
-  not have falls back to the face in use, unstyled.
-- **Adding a font file or toggling one needs a game restart.** Fonts are built once.
+  `<font="Barlow"><b>text</b>` equals `<font="Barlow Bold">text` exactly. Where the family has no
+  such face, `<b>` thickens the face in use and `<i>` slants it (TextMeshPro's own stand-in), and a
+  `<font-weight=N>` with no matching face draws it unchanged.
+- **Combine through the family, not a weight's name.** `<font="Barlow"><b><i>` is Barlow Bold
+  Italic; `<font="Barlow Bold"><i>` is plain Barlow Italic, the bold lost.
+- **Adding a font file or toggling one needs a game restart.** Fonts are built once. Replacing or
+  deleting a font file needs the game closed: it keeps every font file it loaded open.
 - **Fonts can also be downloaded:** links in the `FontUrls` setting (a `.ttf`/`.otf` file, or a
   Google Fonts CSS link such as `https://fonts.googleapis.com/css2?family=Manrope:wght@400;700`)
   are fetched once into `fonts/downloaded` and named from the font (`Manrope-Bold` is
-  `<font="Manrope Bold">`). WOFF2 is not read. Separate several links with **spaces, not commas**:
-  a Google Fonts URL contains commas and semicolons of its own. A page (ScriptedScreens Html `@font-face`) may
+  `<font="Manrope Bold">`). WOFF and WOFF2 are not read. Separate several links with **spaces, not
+  commas**: a Google Fonts URL contains commas and semicolons of its own. A page (a ScriptedScreens
+  Vector `FONT` link, or an Html `@font-face`) may
   download only from the hosts in `PageFontHosts`, Google Fonts by default, over https, with no
   redirects.
 - **A variable font gives all of its named instances**, each a separate name
@@ -100,16 +107,17 @@ end
 - **`<noparse>` anywhere in a label's text turns rich text off for the whole label.**
 - **Game fonts keep registering for the first minutes of a session.** A name missing from
   the list early may appear later.
-- Every font file can be switched off in the mod config (`Your fonts: <family>` and
-  `Font files: <family>` sections); a switched-off font does not resolve.
+- Every font file can be switched off in the mod config (`Your fonts (restart to apply): <family>`
+  and `Included fonts (restart to apply): <family>` sections); a switched-off font does not
+  resolve, so its tag prints literally.
 
 ## Symptom to cause
 
 | what the console shows | cause |
 |---|---|
 | the text in the right face | the name resolved |
-| the literal `<font="X">` | the name is wrong: case, or a file name used as a font name |
-| the text in the default face | the font is not loaded: switched off, or not registered yet |
+| the literal `<font="X">` | nothing is registered under that name: wrong case, a file name used as a font name, switched off, or not registered yet |
+| the text in the default face | the name resolved, but that face has none of these characters (a symbol font asked for letters) |
 | a character in the wrong face | the font file has no glyph for it, so TMP substituted one |
 | a character missing outright | neither the font nor TMP's fallback has it |
 | Unity `_CullMode` errors in the log | a flagged game font is used in a label |
