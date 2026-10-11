@@ -170,7 +170,7 @@ internal static class FontDownloader
             // An allowed stylesheet must not be a way to reach a host that is not allowed.
             if (allowed != null && !allowed(fontUrl))
             {
-                ScriptedScreensFontsPlugin.Log?.LogWarning($"Font link {fontUrl} in {url} refused: its host is not in PageFontHosts.");
+                ScriptedScreensFontsPlugin.Log?.LogWarning($"Font link {fontUrl} in {url} refused: not https, or its host is not in PageFontHosts.");
                 continue;
             }
 

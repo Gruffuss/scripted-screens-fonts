@@ -10,23 +10,24 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       for the test) answering 302 to `127.0.0.1` (not allowed): before, the second host served the
       file and it was saved; after, `Redirect limit exceeded` and the second host never contacted.
       Google Fonts measured serving 200 with no redirects; a real uncached Google link still loads.
-- [ ] **Owner decision:** page requests accept plain `http`, and Google serves `http://` fonts and
-      stylesheets with 200 and no upgrade (measured 2026-10-11), so a page's font bytes can travel
-      unencrypted to native FreeType. Recommendation: https only for page requests; `FontUrls`
-      unchanged. Counter-case: a player listing a LAN http host.
-- [ ] **Owner decision:** `fonts/downloaded` sits inside the player's folder, which is scanned
-      before the bundled fonts, so a face a page once downloaded claims its name ahead of a bundled
-      one in every later session (the same session, it loses the clash). The player-wins rule was
-      meant for the player's own files. Recommendation: scan `fonts/downloaded` after the bundled
-      fonts.
+- [x] Page requests are https only (owner's decision, 2026-10-11): Google serves `http://` fonts and
+      stylesheets with 200 and no upgrade, so an http link carried the bytes in the clear. Also
+      applied to every font link inside an allowed stylesheet. `FontUrls` unchanged. Seen in game:
+      an `http://` FONT link is refused before anything is fetched.
+- [x] `fonts/downloaded` loads after the bundled fonts (owner's decision, 2026-10-11), so a face a
+      page once downloaded can no longer take a bundled name in later sessions; the player's own
+      files still win. Only the load order moved, so every on/off switch is unchanged. Seen in game
+      with a planted download declaring "Barlow": bundled Barlow registered, the download was
+      skipped, and the label drew real Barlow. The family-link order in the log moved from
+      downloads-first to own files, bundled, then downloads.
 - [ ] **Download misnamed:** a copy of bundled Barlow-Regular with every family record renamed to
       "RedirectProbe" (same byte length, 98,812) was saved as `Barlow-Regular.ttf` and logged as
       "Barlow Regular": `FontEngine.LoadFontFace(byte[])` then `GetFaceInfo()` in
       `FontDownloader.Save` reported a face other than the bytes held. Same overload as the
       glyphless-face fault. Real downloads so far were named correctly. Cause unknown; candidate
       fixes: name the file from its own name table, or load through a temporary path.
-- [ ] After the next game close, check `PageFontHosts` in the config still reads the default: it
-      was restored on disk while the game ran with `localhost` added in memory.
+- [x] Checked after the close: `PageFontHosts` kept the default restored on disk, so the in-memory
+      value from the test was not written back.
 
 - [x] Probed the game faces' SDF constants for the console builder (2026-10-11): `font_english`
       pointSize 147, gradientScale 11, ratio 0.9091, normal weight -0.6, no dilate or outline.

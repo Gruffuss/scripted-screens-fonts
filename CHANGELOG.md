@@ -4,6 +4,13 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## 0.4.0
 
+- A page's font links must be https. Google Fonts serves plain http too, with no upgrade, so an
+  http link carried a font file -- which native code parses -- in the clear, where anything on the
+  way could replace it. Your own `FontUrls` links may still be http.
+- Downloaded fonts now load after the bundled ones, so a name clash goes to the bundled font. They
+  sit in your fonts folder, which loads first so that your own files can replace bundled ones, and
+  that let a font some page once fetched take a bundled font's name in every later session. Your
+  own files still win; every on/off switch is unchanged.
 - Fixed: a page's font link could be redirected to a host `PageFontHosts` never allowed. The list
   was checked against the link as written, but the download then followed up to 32 redirects
   wherever they led, so an allowed host could pass the request on and the font's bytes, which

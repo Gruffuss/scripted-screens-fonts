@@ -181,7 +181,8 @@ internal static class FontLoader
     {
         _files = new List<string>();
 
-        // The player's folder first, so a player's font can take over a bundled font's name.
+        // The player's folder first, so a player's font can take over a bundled font's name --
+        // except what is in its downloaded folder, which LoadDownloadsLast moves behind them.
         // It lives outside the mod on purpose: a Workshop update replaces the mod folder, and
         // fonts dropped in there would be lost with it.
         var userFolder = UserFontsFolder();
@@ -192,6 +193,33 @@ internal static class FontLoader
         // "Font files: X" sorts before "Fonts" because the space beats the s -- which buried the
         // actual settings in the middle of three dozen file switches.
         Scan(Path.Combine(modDirectory, FontsFolder), "Included fonts (restart to apply): ", config, create: false);
+
+        // Downloads load after the bundled fonts, so a name clash goes to the bundled file. The
+        // player's folder comes first so that their own files win a clash -- that is what the
+        // folder is for -- but fonts/downloaded lives inside it, and until 2026-10-11 that let a font
+        // some page once fetched claim its name ahead of a bundled one in every later session,
+        // while losing the same clash in the session that fetched it. Only the load order moves:
+        // the scan above, and so every file's on/off switch and its section, is unchanged.
+        if (userFolder != null)
+            LoadDownloadsLast(Path.Combine(userFolder, "downloaded"));
+    }
+
+    private static void LoadDownloadsLast(string downloads)
+    {
+        var prefix = Path.GetFullPath(downloads).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var own = new List<string>();
+        var fetched = new List<string>();
+        foreach (var path in _files!)
+        {
+            if (Path.GetFullPath(path).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                fetched.Add(path);
+            else
+                own.Add(path);
+        }
+
+        _files.Clear();
+        _files.AddRange(own);
+        _files.AddRange(fetched);
     }
 
     /// <summary>

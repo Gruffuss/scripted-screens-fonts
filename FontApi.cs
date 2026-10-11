@@ -88,12 +88,13 @@ public static class FontApi
     /// Loads the fonts behind <paramref name="link"/> and reports the names they can be used
     /// under, as <c>&lt;font="Name"&gt;</c> or a CSS <c>font-family</c>.
     /// </summary>
-    /// <param name="link">An http(s) link to a <c>.ttf</c>/<c>.otf</c> file or a Google Fonts
-    /// stylesheet, on a host listed in the <c>PageFontHosts</c> setting.</param>
+    /// <param name="link">An https link to a <c>.ttf</c>/<c>.otf</c> file or a Google Fonts
+    /// stylesheet, on a host listed in the <c>PageFontHosts</c> setting. Plain http and redirects
+    /// are refused.</param>
     /// <param name="done">Called once, on the main thread, with the registered names ("Manrope",
     /// "Manrope Bold"); empty when nothing could be loaded, in which case a later request tries
     /// again. Called immediately when the link was already loaded this session.</param>
-    /// <returns>False when the link is refused — malformed, not http(s), or its host not
+    /// <returns>False when the link is refused — malformed, not https, or its host not
     /// allowed — and <paramref name="done"/> is not called. The reason is in the log.</returns>
     public static bool RequestFont(string link, Action<string[]>? done)
     {
@@ -122,9 +123,13 @@ public static class FontApi
 
     private static bool Request(string link, Action<string[], string>? done)
     {
-        if (!Uri.TryCreate(link, UriKind.Absolute, out var url) || (url.Scheme != Uri.UriSchemeHttp && url.Scheme != Uri.UriSchemeHttps))
+        // https only. PageFontHosts trusts a host, and only https can show that the bytes came from
+        // it: Google answers plain http with 200 and no upgrade (measured 2026-10-11), so an http
+        // link would carry a font file -- parsed by native code -- in the clear, for anything on the
+        // path to replace. FontUrls, the player's own links, are not limited.
+        if (!Uri.TryCreate(link, UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps)
         {
-            ScriptedScreensFontsPlugin.Log?.LogWarning($"Font request refused, not an http(s) link: {link}");
+            ScriptedScreensFontsPlugin.Log?.LogWarning($"Font request refused, not an https link: {link}");
             return false;
         }
 
@@ -164,6 +169,9 @@ public static class FontApi
 
     private static bool Allowed(Uri url)
     {
+        if (url.Scheme != Uri.UriSchemeHttps)
+            return false;
+
         foreach (var entry in (_hosts?.Value ?? string.Empty).Split(HostSeparators, StringSplitOptions.RemoveEmptyEntries))
         {
             var allowed = entry.Trim().TrimStart('.');

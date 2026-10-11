@@ -83,7 +83,8 @@ organising by project is fine.
 **Do not put your fonts in the mod's own folder.** `mods/ScriptedScreensFonts/Assets/fonts`
 holds the fonts that ship with the mod, and a Workshop update replaces the mod folder, taking
 anything added there with it. A font in your folder with the same name as a bundled one takes
-its place.
+its place. Downloaded fonts do not: anything in `fonts/downloaded` loads after the bundled fonts,
+so a font a page once fetched can never replace one the mod ships.
 
 **The name comes from the font's own metadata** — family, plus style when that is not
 Regular:
@@ -136,7 +137,9 @@ multiplayer its source reaches every player, while a font file is read by native
 page may only download from the hosts in **`PageFontHosts`**, which defaults to Google Fonts
 alone (`fonts.googleapis.com fonts.gstatic.com`): Google serves only its own curated files,
 where a general CDN serves anything anyone uploads. A stylesheet's font links must pass the
-same check. Empty refuses every page download; the setting applies at once.
+same check. Page links must be **https**, and a redirect is refused rather than followed: the host
+list can only vouch for where the bytes actually come from. Empty refuses every page download; the
+setting applies at once.
 
 Page fonts use the same `fonts/downloaded` cache, so each downloads once. A font you have
 switched off stays off, and a session builds at most 48 page font faces. The cap is on how many

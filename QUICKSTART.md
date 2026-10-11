@@ -87,7 +87,8 @@ end
   are fetched once into `fonts/downloaded` and named from the font (`Manrope-Bold` is
   `<font="Manrope Bold">`). WOFF2 is not read. Separate several links with **spaces, not commas**:
   a Google Fonts URL contains commas and semicolons of its own. A page (ScriptedScreens Html `@font-face`) may
-  download only from the hosts in `PageFontHosts`, Google Fonts by default.
+  download only from the hosts in `PageFontHosts`, Google Fonts by default, over https, with no
+  redirects.
 - **A variable font gives all of its named instances**, each a separate name
   (`<font="Cascadia Code SemiBold">`), and each with its own atlas, which stays empty and free
   until something draws with that name. A weight style the
