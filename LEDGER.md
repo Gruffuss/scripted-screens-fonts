@@ -4,6 +4,12 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
+- [x] **Stale config sections stay** (owner's decision, 2026-10-11). Every section-name change left
+      the old sections in players' config files -- `Font files: ...` from 0.2.0 and `Your fonts: ...`
+      from before "(restart to apply)" -- since BepInEx keeps entries nobody binds any more. The
+      mod could prune its own old prefixes at startup with no risk to a current switch; the owner
+      chose to leave them.
+
 - [x] **Both pre-publish game checks pass** (2026-10-11). (1) A variable font on the path loader:
       Windows' `CascadiaCode.ttf` registered six distinct `Cascadia Code ...` faces from one file,
       and drawn on a console their ink rose at every step, ExtraLight 347k to Bold 850k -- six real
