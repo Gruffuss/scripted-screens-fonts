@@ -10,10 +10,18 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
       weights, not one face six times. (2) The live MCP resources serve the corrected text: the
       `charset` description and body, the `available` fallback line, the index from the new
       QUICKSTART, the guide and changelog from the new README and CHANGELOG (7 of 7 checks).
-- [ ] Test fonts left in the player's folder, held open while the game runs:
-      `fonts/CascadiaCode.ttf` and `fonts/downloaded/Audiowide-Regular.ttf`. At the next game
-      close, delete both, Audiowide's `sources.txt` line and their two config sections -- or keep
-      them; both are ordinary fonts.
+- [x] Test fonts `fonts/CascadiaCode.ttf` and `fonts/downloaded/Audiowide-Regular.ttf` stay in the
+      player's folder: the owner chose to keep them (2026-10-11).
+- [x] **`<font-weight=N>` seen in game** (2026-10-11), ink measured per row: with no matching face
+      the text is unchanged (Orbitron 600 and Pacifico 700 equal their regular exactly); with a
+      real face it picks it, identical to `<b>` (Orbitron Bold 791,407 both ways); `<b>` with no
+      bold face gets TextMeshPro's thickened stand-in (Pacifico 624,699 to 777,792). The docs say
+      exactly this.
+- [x] **The engine cannot read WOFF1** (2026-10-11): a WOFF1 file (Barlow renamed `WoffProbe`,
+      valid -- fontTools reads all 680 glyphs) under a `.ttf` name was refused at load, "not a
+      font file the engine can read". So refusing WOFF in download naming is no regression, and
+      "WOFF and WOFF2 are not read" is true. Tested through the path overload; the byte overload
+      reaches the same FreeType.
 - [x] Docs audited for the 0.4.0 publish (2026-10-11): README, QUICKSTART, CHANGELOG, About.xml,
       the MCP text in `FontsDocsTool`, the `FontApi` doc comments and the examples, every claim checked
       against the code or a measurement; links, versions, the shipped file list and the DLL
