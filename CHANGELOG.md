@@ -4,6 +4,13 @@ Newest first. The workshop page carries only the latest releases; this file has 
 
 ## Unreleased
 
+- Corrected in the docs: the 48-faces-per-session cap on page font requests was described as a
+  texture-memory bound of about 1 MB a face. That stopped being true in 0.3.0, when faces became
+  dynamic -- an undrawn face costs no texture. The cap bounds how much untrusted font data a page
+  can make every player download and parse, which is the reason to keep it. Also corrected:
+  atlases are not "built once" (they start empty and fill as characters are drawn), a variable
+  font's unused named instances cost nothing, and a missing character is now described as the
+  substitution it actually is.
 - `FontApi.Registrations` counts the font faces registered this session, by every route: game
   fonts as their bundles load, files, `FontUrls` downloads and page requests. A mod that caches a
   laid-out page can compare it against the number it held at layout time to know whether a redraw

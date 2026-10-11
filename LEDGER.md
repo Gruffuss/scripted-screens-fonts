@@ -4,6 +4,28 @@ Living record of this mod's work. Newest state first; `- [ ]` open, `- [x]` done
 
 ## Waiting on a game start
 
+- [x] `FontApi.Registrations` **seen in game** 2026-10-11, with the vector mod 0.11.112: an
+      element naming Bangers and declaring no font link switched to it on arrival, with no
+      re-push, driven by the counter alone. The vector mod reads it through a delegate off
+      `GetGetMethod()`, once a frame, and only while a label has fallen back, so the game-font
+      churn I warned about costs a fully-resolved page nothing. A property is enough; no field.
+
+- [x] Page font downloads now gated on the 48-face limit (`8ffb47e`), built and deployed. The
+      check sat after the fetch, so a session at the limit downloaded every further link in full
+      before refusing it; in-flight downloads now count too, which also closes the concurrent
+      case (many links in one frame all read `_faces == 0`). Found in review by the vector mod.
+      **Loaded in three game runs but still unexercised** -- nothing has pushed toward 48 faces.
+      Exercising it needs 48 distinct allowed links, or a build with `MaxPageFaces` lowered.
+- [ ] Faces load by path, so the running game **holds every font file open**: a page font in
+      `fonts/downloaded` cannot be deleted or replaced until the game closes. The byte overload
+      did not do this, but it produced glyphless faces, so reverting is not the answer. Not yet
+      decided what, if anything, to do.
+- [x] Measured 2026-10-11: a drawn ScriptedScreens label **never** re-resolves when a face
+      arrives mid-session (`font_english`, 28 chars, before the callback, straight after it and
+      two seconds later untouched). So rebuild-on-callback is load-bearing: in the vector mod the
+      unskip of unchanged placements plus one forced re-layout is what makes a rebuild take
+      effect, because TMP's same-string setter short-circuits as well as the label skip.
+
 - [x] Catalogue entry wording reordered so the `_CullMode` warning comes last (`4cd2f89`), built
       and deployed. Not yet loaded: it takes effect at the next game start, like any build here.
       Nothing to do, and nothing depends on it -- it changes one documentation string.

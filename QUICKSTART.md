@@ -89,7 +89,8 @@ end
   a Google Fonts URL contains commas and semicolons of its own. A page (ScriptedScreens Html `@font-face`) may
   download only from the hosts in `PageFontHosts`, Google Fonts by default.
 - **A variable font gives all of its named instances**, each a separate name
-  (`<font="Cascadia Code SemiBold">`), and each with its own atlas in memory. A weight style the
+  (`<font="Cascadia Code SemiBold">`), and each with its own atlas, which stays empty and free
+  until something draws with that name. A weight style the
   font invents, such as SemiLight, still gets a name but has no `<font-weight>` slot to sit in.
 - **Own fonts go in `Documents/My Games/Stationeers/fonts`, never in the mod folder**, which a
   Workshop update replaces.
@@ -108,7 +109,8 @@ end
 | the text in the right face | the name resolved |
 | the literal `<font="X">` | the name is wrong: case, or a file name used as a font name |
 | the text in the default face | the font is not loaded: switched off, or not registered yet |
-| some characters missing | the font has no glyph for them, or they are outside the character set |
+| a character in the wrong face | the font file has no glyph for it, so TMP substituted one |
+| a character missing outright | neither the font nor TMP's fallback has it |
 | Unity `_CullMode` errors in the log | a flagged game font is used in a label |
 
 ## Checklist

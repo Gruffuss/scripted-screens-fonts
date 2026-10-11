@@ -29,12 +29,20 @@ namespace ScriptedScreensFonts;
 /// <para>
 /// Files land in the same <c>fonts/downloaded</c> cache as <c>FontUrls</c>, so a page's font is
 /// downloaded once ever, not once per session. A font the player has switched off in the mod
-/// settings stays off. Each loaded face costs about 1 MB of texture memory for the session, so
-/// page requests are capped at <see cref="MaxPageFaces"/> faces per session.
+/// settings stays off. Page requests are capped at <see cref="MaxPageFaces"/> faces per session.
+/// That cap bounds how much untrusted font data a page can make every player fetch and hand to
+/// FreeType -- not texture memory, which it used to: since 0.3.0 a face starts with an empty
+/// atlas and costs nothing until something draws a glyph from it.
 /// </para>
 /// </remarks>
 public static class FontApi
 {
+    // A round number, never measured. It dates from the static-atlas build, where a face cost a
+    // fixed 1 MB of texture the moment it loaded, so 48 meant "about 48 MB". Since 0.3.0 an
+    // undrawn face costs no texture at all and that argument is gone; what the cap still bounds
+    // is how many font files a page can make every player download and parse in native code,
+    // which is the reason worth keeping. Nothing has come near it in practice -- one Google
+    // Fonts link brings a handful of faces, and a page needing 48 distinct ones is not a page.
     private const int MaxPageFaces = 48;
 
     /// <summary>How long a request waits for the font loader before reporting nothing.</summary>

@@ -37,9 +37,11 @@ internal static class FontLoader
     /// <summary>Folder scanned for font files, relative to the mod's own directory.</summary>
     internal const string FontsFolder = "Assets/fonts";
 
-    // 48 rather than TMP's default 90: the whole character set has to fit one atlas, since a
-    // static atlas cannot spill into a second one. At 90pt a 1024x1024 atlas runs out at
-    // roughly 100 characters and the rest would silently not render.
+    // 48 rather than TMP's default 90. The static path forced it: it cannot spill into a second
+    // texture, so at 90pt a 1024x1024 atlas runs out around 100 characters and the rest silently
+    // does not render. Dynamic faces do spill (isMultiAtlasTexturesEnabled), so that constraint
+    // now binds only the static fallback -- but the value stays 48 for both, and the GPOS
+    // kerning records are scaled from it, so it is not a knob to turn on its own.
     private const int SamplingPointSize = 48;
     private const int AtlasPadding = 5;
     private const int AtlasSize = 1024;
